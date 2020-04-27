@@ -281,15 +281,13 @@ if __name__ == "__main__":
                 nEX = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
                 
                 # Referenciamos a la lista con los nodos de las naves enemigas
+                if t > 3*(i+1) and t > 3*(i+2):
+                    pos_nEY[i] = 0.7
                 
                 
-                "if pos_nEY[i] < 0.8:"
-                naves[i].transform = tr.matmul([tr.translate(nEX, 0.8, 0), tr.uniformScale(0.1*(i+1))])
+                naves[i].transform = tr.matmul([tr.translate(nEX, pos_nEY[i], 0), tr.uniformScale(0.3)])
                 sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")
                 
-                """else:
-                    naves[i].transform = tr.matmul([tr.translate(nEX, pos_nEY[i], 0), tr.uniformScale(0.1*(i+1))])
-                    sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")"""
             
         
         # Once the render is done, buffers are swapped, showing only the complete scene.
