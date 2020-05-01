@@ -32,11 +32,15 @@ def on_key(window, key, scancode, action, mods):
         return
     
     global controller
-
+    global disparoBool
 
 
     if key == glfw.KEY_ESCAPE:
         sys.exit()
+        
+    if key == glfw.KEY_SPACE:
+        if disparoBool == False:
+            disparoBool = True
 
 def createNaveAliada():
     naveAliadaTexture1 = es.toGPUShape(bs.createTextureQuad("naveAliada1.png"), GL_REPEAT, GL_LINEAR)
@@ -101,9 +105,7 @@ def createNavesEnemigas(n):
     return navesEnemigas
 
 
-def createDisparo():
-    disparo = es.toGPUShape(bs.createTextureQuad("disparo.png"), GL_REPEAT, GL_LINEAR)
-    return disparo
+
         
     
 
@@ -159,6 +161,22 @@ if __name__ == "__main__":
     spacePosition = 0.0
     
     
+    # Disparos
+    disparoTexture = es.toGPUShape(bs.createTextureQuad("disparo.png"), GL_REPEAT, GL_LINEAR)
+    disparoNodo = sg.SceneGraphNode("disparo")
+    disparoNodo.childs += [disparoTexture]
+    disparos = sg.SceneGraphNode("disparos")
+    
+    # Arreglo con las posiciones de cada disparo en x e y
+    xD = []
+    yD = []
+    
+    disparoBool = False # Booloeano que me dice si tengo que generar un disparo o no
+    numDisparo = 0 # Numero que me ayudará para saber en qué nodo de disparo estoy
+    disparosArray = [] # Lista para ir poniendo los nodos de disparo
+    
+    
+    
     # Nave Aliada
     naveAliada = createNaveAliada()
     nX = 0
@@ -170,9 +188,6 @@ if __name__ == "__main__":
     nEX = 0
     nEY = 0.7
     
-    # Arreglo con las posiciones de cada disparo en x e y
-    xD = []
-    yD = []
     
     navesEnemigas = createNavesEnemigas(N)
     
@@ -223,11 +238,7 @@ if __name__ == "__main__":
             if nY > -0.8:
                 nY -= 0.0013
                 
-        if (glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS):
-            disp = createDisparo() # Se genera el disparo
-            disparosGPU += [disp]
-            xD += [nX]
-            yD += [nY]
+
 
         
 
@@ -252,11 +263,12 @@ if __name__ == "__main__":
         glUseProgram(pipelineTexture.shaderProgram)
 
     
+ 
+            
         # Drawing the texture background
         
         # Modifying only the space Texture
         # This condition translates the space so it can be seen as a loop
-        
         # Espacio exterior
         if spacePosition > 6.0:
             spacePosition = spacePosition % 6
@@ -319,15 +331,30 @@ if __name__ == "__main__":
                 
             
         # Disparo
-        if (disparosGPU != []):
-            for i in range(len(disparosGPU)):
-                if yD[i] < 1.3: # Si aún no llega al borde superior de la vetana
+        # Creando el disparo                    
+        if disparoBool:
+            disparoNave = sg.SceneGraphNode("disparo" + str(numDisparo))
+            disparoNave.childs += [disparoNodo] # Se le agrega el nodo que tiene como hijo el gpu del disparo
+            numDisparo += 1 # Pasamos al siguiente para cuando se cree otro disparo, quede con el nombre con el numero siguiente
+            disparos.childs += [disparoNave] # Agregamos el nodo recién creado al nodo gigante
+            xD += [nX]
+            yD += [nY + 0.2]
+            disparoBool = False
+            
+        # Dibujado el disparo    
+        if (numDisparo > 0): # Si existe algún disparo
+            for i in range(numDisparo):
+                disparosArray += [sg.findNode(disparos, "disparo" + str(i))]
+            for i in range(numDisparo): # Así sabemos cuantos disparos existen
+                if yD[i] < 1.1: # Si aún no llega al borde superior de la vetana
                     yD[i] +=0.002
                 
       
-                    glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE,tr.matmul([tr.translate(xD[i], yD[i], 0),
-                                                                                                            tr.uniformScale(0.2)]))
-                    pipelineTexture.drawShape(disparosGPU[i])
+                    #glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE,tr.matmul([tr.translate(xD[i], yD[i], 0),
+                                                                                                            #tr.uniformScale(0.2)]))
+                    disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
+                    sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
+                    #pipelineTexture.drawShape(disparos.childs[i])
         
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
