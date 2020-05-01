@@ -99,6 +99,11 @@ def createNavesEnemigas(n):
         navesEnemigas.childs += [newNode]
         
     return navesEnemigas
+
+
+def createDisparo():
+    disparo = es.toGPUShape(bs.createTextureQuad("disparo.png"), GL_REPEAT, GL_LINEAR)
+    return disparo
         
     
 
@@ -130,7 +135,7 @@ if __name__ == "__main__":
     # Assembling the shader program (pipeline) with both shaders
     
     pipelineTexture = es.SimpleTextureTransformShaderProgram()
-    pipelineNoTexture = es.SimpleTransformShaderProgram()
+    #pipelineNoTexture = es.SimpleTransformShaderProgram()
  
     
     # Telling OpenGL to use our shader program
@@ -165,16 +170,29 @@ if __name__ == "__main__":
     nEX = 0
     nEY = 0.7
     
+    # Arreglo con las posiciones de cada disparo en x e y
+    xD = []
+    yD = []
+    
     navesEnemigas = createNavesEnemigas(N)
     
     # Lista con los nodos de las naves enemigas
-    naves = []    
+    naves = [] 
+    
+    # Arreglo de booleanos que me dice si la nave enemiga numero i existe o no,
+    # lo usaré para cuando el disparo le pegue a una nave
+    existeNave = [] 
+    
+    
     for i in range(N):
         nave_i = sg.findNode(navesEnemigas, "naveEnemiga"+str(i))
         naves += [nave_i]
+        existeNave += [True]
 
+    # Lista con los disparos
+    disparosGPU = []
     
-        
+    t0 = glfw.get_time()    
     
     while not glfw.window_should_close(window):
         
@@ -183,6 +201,9 @@ if __name__ == "__main__":
         glfw.poll_events()
         # Update Time
         t = glfw.get_time()
+        dt = t - t0
+        t0 = t
+        
         spacePosition = 0.7 * t
         
         
@@ -201,6 +222,12 @@ if __name__ == "__main__":
         if (glfw.get_key(window, glfw.KEY_S) == glfw.PRESS):
             if nY > -0.8:
                 nY -= 0.0013
+                
+        if (glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS):
+            disp = createDisparo() # Se genera el disparo
+            disparosGPU += [disp]
+            xD += [nX]
+            yD += [nY]
 
         
 
@@ -241,7 +268,7 @@ if __name__ == "__main__":
         sg.drawSceneGraphNode(space, pipelineTexture, "transform")
         
         
-        # Nave aliada
+        # Animación de la Nave aliada
         
         naveAliada1 = sg.findNode(naveAliada, "naveAliada1")
         naveAliada2 = sg.findNode(naveAliada, "naveAliada2")
@@ -276,23 +303,35 @@ if __name__ == "__main__":
         for i in range(N):
             
                 
-            # Haremos que las naves aparezcan gradualmente
-            if t > 3*(i+1):
-                nEX = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
+            # Haremos que las naves aparezcan gradualmente si su valor es True
+            if (existeNave[i]):
                 
-                # Referenciamos a la lista con los nodos de las naves enemigas
-                if t > 3*(i+1) and t > 3*(i+2):
-                    pos_nEY[i] = 0.7
+                if t > 3*(i+1):
+                    nEX = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
+                
+                    # Referenciamos a la lista con los nodos de las naves enemigas
+                    if t > 3*(i+1) and t > 3*(i+2):
+                        pos_nEY[i] = 0.7
                 
                 
-                naves[i].transform = tr.matmul([tr.translate(nEX, pos_nEY[i], 0), tr.uniformScale(0.3)])
-                sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")
+                    naves[i].transform = tr.matmul([tr.translate(nEX, pos_nEY[i], 0), tr.uniformScale(0.3)])
+                    sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")
                 
             
+        # Disparo
+        if (disparosGPU != []):
+            for i in range(len(disparosGPU)):
+                if yD[i] < 1.3: # Si aún no llega al borde superior de la vetana
+                    yD[i] +=0.002
+                
+      
+                    glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE,tr.matmul([tr.translate(xD[i], yD[i], 0),
+                                                                                                            tr.uniformScale(0.2)]))
+                    pipelineTexture.drawShape(disparosGPU[i])
         
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
         
-        t0 = glfw.get_time()
+        
         
     glfw.terminate()
