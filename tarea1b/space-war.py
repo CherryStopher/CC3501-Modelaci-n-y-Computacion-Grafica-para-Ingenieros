@@ -174,6 +174,7 @@ if __name__ == "__main__":
     disparoBool = False # Booloeano que me dice si tengo que generar un disparo o no
     numDisparo = 0 # Numero que me ayudará para saber en qué nodo de disparo estoy
     disparosArray = [] # Lista para ir poniendo los nodos de disparo
+    existeDisparo = []
     
     
     
@@ -193,6 +194,12 @@ if __name__ == "__main__":
     
     # Lista con los nodos de las naves enemigas
     naves = [] 
+    
+    # Posición inicial de las naves enemigas en el eje X
+    pos_nEX = []
+    for j in range(N):
+        pos_nEX += [0]
+    
     
     # Arreglo de booleanos que me dice si la nave enemiga numero i existe o no,
     # lo usaré para cuando el disparo le pegue a una nave
@@ -303,35 +310,9 @@ if __name__ == "__main__":
             
         if t % 2 <2.0 and t % 2 >= 1.5:
             sg.drawSceneGraphNode(naveAliada4, pipelineTexture, "transform")
+         
             
-        
-        # Naves enemigas
-        pos_nEY = []
-        for j in range(N):
-            ti = t % 3 # Tiempo inicial en que aparecerá cada nave
-            # lista de tiempos de entrada
-            pos_nEY += [1.3 - 0.2 * ti] 
-            
-        for i in range(N):
-            
-                
-            # Haremos que las naves aparezcan gradualmente si su valor es True
-            if (existeNave[i]):
-                
-                if t > 3*(i+1):
-                    nEX = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
-                
-                    # Referenciamos a la lista con los nodos de las naves enemigas
-                    if t > 3*(i+1) and t > 3*(i+2):
-                        pos_nEY[i] = 0.7
-                
-                
-                    naves[i].transform = tr.matmul([tr.translate(nEX, pos_nEY[i], 0), tr.uniformScale(0.3)])
-                    sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")
-                
-            
-        # Disparo
-        # Creando el disparo                    
+        # Disparo de la nave aliada
         if disparoBool:
             disparoNave = sg.SceneGraphNode("disparo" + str(numDisparo))
             disparoNave.childs += [disparoNodo] # Se le agrega el nodo que tiene como hijo el gpu del disparo
@@ -339,22 +320,71 @@ if __name__ == "__main__":
             disparos.childs += [disparoNave] # Agregamos el nodo recién creado al nodo gigante
             xD += [nX]
             yD += [nY + 0.2]
+            existeDisparo += [True]
             disparoBool = False
             
-        # Dibujado el disparo    
+            
+            
+        # Posición de las naves enemigas en el eje x e y
+        pos_nEY = []
+        for j in range(N):
+            ti = t % 3 # Tiempo inicial en que aparecerá cada nave
+            # lista de tiempos de entrada
+            pos_nEY += [1.3 - 0.2 * ti] 
+            
+            
+        for i in range(N):
+                 
+            # Haremos que las naves aparezcan gradualmente si su valor es True, es decir, si existen
+            if (existeNave[i]):
+                
+                if t > 3*(i+1):
+                    pos_nEX[i] = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
+                    
+                
+                    # Referenciamos a la lista con los nodos de las naves enemigas
+                    if t > 3*(i+1) and t > 3*(i+2):
+                        pos_nEY[i] = 0.7
+                
+                
+                    naves[i].transform = tr.matmul([tr.translate(pos_nEX[i], pos_nEY[i], 0), tr.uniformScale(0.3)])
+                    sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")
+                
+            
+        
+        
+        # Dibujando el disparo
         if (numDisparo > 0): # Si existe algún disparo
             for i in range(numDisparo):
                 disparosArray += [sg.findNode(disparos, "disparo" + str(i))]
-            for i in range(numDisparo): # Así sabemos cuantos disparos existen
-                if yD[i] < 1.1: # Si aún no llega al borde superior de la vetana
-                    yD[i] +=0.002
                 
-      
-                    #glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE,tr.matmul([tr.translate(xD[i], yD[i], 0),
-                                                                                                            #tr.uniformScale(0.2)]))
-                    disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
-                    sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
-                    #pipelineTexture.drawShape(disparos.childs[i])
+           
+            for i in range(numDisparo): # Aqui veremos cuando impacte a una nave enemiga
+                if yD[i] < 1.1 and existeDisparo[i]: # Si aún no llega al borde superior de la vetana y si existe el disparo
+                    for j in range(N): # Aquí veremos cuando impacte a una nave enemiga
+                        
+                        
+                        epsilon = 0.001
+                        # Si el disparo aún no toca alguna nave enemiga entonces se dibuja el disparo
+                        if not ((abs(yD[i] - pos_nEY[j]) < epsilon) and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
+                            yD[i] +=0.001
+                            disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
+                            sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
+                            
+                        else:
+                            if existeNave[j]: # Si no se cumple lo anterior, es porque el disparo impactó alguna nave, entonces esa nave se borra de la escena
+                                existeNave[j] = False 
+                                pos_nEX[j] = 5 
+                                pos_nEY[j] = -5 # Con estos valores nos aseguramos de que la nave ya no esté al alcance del disparo
+                                xD[i] = -5
+                                yD[i] = -6 # Así nos aseguramos de que el disparo no interfiera con otras naves después de impactar alguna
+                                existeDisparo[i] = False # Ahora el disparo no existe
+                                print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                else:
+                    
+                    existeDisparo[i] = False # Ahora el disparo no existe
+                            
+        
         
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
