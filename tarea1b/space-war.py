@@ -94,6 +94,8 @@ def createNavesEnemigas(n):
     navesEnemigasNodos = sg.SceneGraphNode("navesEnemigasNodos")
     navesEnemigasNodos.childs += [createNaveEnemiga()] # Re-using the previous function
     
+
+    
     navesEnemigas = sg.SceneGraphNode("navesEnemigas")
     
     baseName = "naveEnemiga"
@@ -107,7 +109,15 @@ def createNavesEnemigas(n):
     return navesEnemigas
 
 
-
+def createDisparosEnemigos():
+    disparoGPU = es.toGPUShape(bs.createTextureQuad("disparoEnemigo.png"), GL_REPEAT, GL_LINEAR)
+    disparosEnemigos = sg.SceneGraphNode("disparosEnemigos")
+    for i in range(N):
+        dispEne = sg.SceneGraphNode("disparoEnemigo" + str(i))
+        dispEne.childs += [disparoGPU]
+        dispEne.transform = tr.uniformScale(0.3)
+        disparosEnemigos.childs += [dispEne]
+    return disparosEnemigos
         
     
 
@@ -155,7 +165,7 @@ if __name__ == "__main__":
     # Creamos las GPUs
     
     # Espacio exterior
-    spaceTexture = es.toGPUShape(bs.createTextureQuad("FondoSpaceWar2.png"), GL_REPEAT, GL_LINEAR)
+    spaceTexture = es.toGPUShape(bs.createTextureQuad("FondoSpaceWar3.png"), GL_REPEAT, GL_LINEAR)
     space = sg.SceneGraphNode("space")
     space.childs += [spaceTexture]
     space.transform = tr.matmul([tr.translate(0, 3, 0), tr.scale(2, 8, 1)])
@@ -213,7 +223,21 @@ if __name__ == "__main__":
         nave_i = sg.findNode(navesEnemigas, "naveEnemiga"+str(i))
         naves += [nave_i]
         existeNave += [True] # Decimos que la nave recién creada existe
+        
+    
+    # Creamos los disparos de las naves enemigas
+    posBX = []
+    posBY = []    
+    dispEnem = createDisparosEnemigos()
+    disparosEnemigos = []    
 
+    for i in range(N):
+        disparoEnemigo_i = sg.findNode(dispEnem, "disparoEnemigo" + str(i))
+        disparosEnemigos += [disparoEnemigo_i]
+
+        posBX += [0]
+        posBY += [-3]
+        
 
     # Valor para saber si ganamos el juego
     ganaste = False
@@ -340,26 +364,53 @@ if __name__ == "__main__":
             ti = t % 3 # Tiempo inicial en que aparecerá cada nave
             # lista de tiempos de entrada
             pos_nEY += [1.3 - 0.2 * ti] 
+        
+        #Posiciones de los disparos enemigos
+        
             
             
         for i in range(N):
                  
             # Haremos que las naves aparezcan gradualmente si su valor es True, es decir, si existen
+            # También haremos aparecer los disparos
             if (existeNave[i]):
                 
-                if t > 3*(i+1):
+                if t > 3*(i+2):
                     pos_nEX[i] = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
                     
                 
                     
-                    if t > 3*(i+1) and t > 3*(i+2): # despues de un tiempo, la nave deja de bajar y oscila en el 0.7
-                        pos_nEY[i] = 0.7
-                
-                
+                    if t > 3*(i+2) and t > 3*(i+3): # despues de un tiempo, la nave deja de bajar y oscila en el 0.7
+                        pos_nEY[i] = 0.7  - 0.1 * np.sin(10*(t + i))
+         
                     naves[i].transform = tr.matmul([tr.translate(pos_nEX[i], pos_nEY[i], 0), tr.uniformScale(0.3)])
                     sg.drawSceneGraphNode(naves[i], pipelineTexture, "transform")
-                
-            
+                    
+                    
+        # Disparos de las naves enemigas
+        for i in range(N):
+            if t > 3*(i+3): # Se crearán cuando la nave i se posicione en el 0.7 y empiece a oscilar
+                # Las haremos que avancen en X para agregarle algo de dificultad al juego
+                posBX[i] = 0.8 * np.sin(t + i) 
+                if existeNave[i]:
+
+                    if posBY[i] < -1.2: # Si la bala salió de la pantalla:
+                        posBY[i] = 0.7 # Hacemos que vuelva a disparar
+                        disparosEnemigos[j].transform = tr.matmul([tr.translate(posBX[i], posBY[i], 0), tr.uniformScale(0.2)])
+                        sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")
+                                
+                    else:
+                        posBY[i] -= 0.001 # Si la bala aún no sale de la pantalla, va bajando
+                        disparosEnemigos[i].transform = tr.matmul([tr.translate(posBX[i], posBY[i], 0), tr.uniformScale(0.2)])
+                        sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")   
+                        
+                else: # Si la nave ya no existe, el disparo se sigue moviendo y solo de dibuja hasta antes de salir de la pantalla
+                    if posBY[i] > -1.2:
+                        posBY[i] -= 0.001
+                        disparosEnemigos[i].transform = tr.matmul([tr.translate(posBX[i], posBY[i], 0), tr.uniformScale(0.2)])
+                        sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")  
+                    
+  
         
         
         # Dibujando el disparo y le vemos la condición para cuando choque con una nave enemiga
@@ -375,9 +426,10 @@ if __name__ == "__main__":
                         epsilon = 0.01
                         
                         # Si el disparo toca una nave enemiga, desaparece el disparo y la nave
-                        if ((abs(yD[i] - 0.7) < epsilon) and pos_nEY[j] == 0.7 and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
+                        if ((abs(yD[i] - 0.7) < epsilon) and pos_nEY[j] < 0.81 and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
                             if existeNave[j]: # Revisamos si la nave numero j existe, si sí, entonces:
                                 existeNave[j] = False # Se actualiza su valor de existencia, esto hará que no se dibuje
+                                
                                 
                                 # Con estos valores nos aseguramos de que la nave ya no esté al alcance del disparo
                                 pos_nEX[j] = 5 
@@ -399,13 +451,12 @@ if __name__ == "__main__":
                     existeDisparo[i] = False # Ahora el disparo no existe
                             
         
-        # Aquí sabremos si ganamos
-        for i in range(N):
-            if existeNave[i]:
-                ganaste = False
-            else:
-                ganaste = True
-                
+        # Aquí sabremos si ganamos      
+        if True in existeNave:
+            ganaste = False
+        else:
+            ganaste = True
+            
         if ganaste:
             if t % 1 < 0.5:
                 glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
