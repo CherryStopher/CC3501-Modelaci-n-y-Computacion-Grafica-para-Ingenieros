@@ -249,6 +249,9 @@ if __name__ == "__main__":
     gpuPerdiste1 = es.toGPUShape(bs.createTextureQuad("perdiste.png"), GL_REPEAT, GL_LINEAR)
     gpuPerdiste2 = es.toGPUShape(bs.createTextureQuad("perdiste2.png"), GL_REPEAT, GL_LINEAR)
     
+    gpuVida3 = es.toGPUShape(bs.createTextureQuad("vidas3.png"), GL_REPEAT, GL_LINEAR)
+    gpuVida2 = es.toGPUShape(bs.createTextureQuad("vidas2.png"), GL_REPEAT, GL_LINEAR)
+    gpuVida1 = es.toGPUShape(bs.createTextureQuad("vidas1.png"), GL_REPEAT, GL_LINEAR)
     while not glfw.window_should_close(window):
         
         
@@ -410,8 +413,7 @@ if __name__ == "__main__":
                         disparosEnemigos[i].transform = tr.matmul([tr.translate(posBX[i], posBY[i], 0), tr.uniformScale(0.2)])
                         sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")  
                     
-  
-        
+
         
         # Dibujando el disparo y le vemos la condición para cuando choque con una nave enemiga
                     
@@ -458,6 +460,7 @@ if __name__ == "__main__":
             ganaste = True
             
         if ganaste:
+            vidas = 100 # Así nos aseguramos de no morir en caso de que nos quede 1 vida y nos mate la bala de un enemigo que matamos
             if t % 1 < 0.5:
                 glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
                 pipelineTexture.drawShape(gpuGanaste1)
@@ -466,13 +469,48 @@ if __name__ == "__main__":
                 glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
                 pipelineTexture.drawShape(gpuGanaste2)
                 
-        # Si pierdes
-        """glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
-        pipelineTexture.drawShape(gpuPerdiste1)
-           
-        glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
-        pipelineTexture.drawShape(gpuPerdiste2)"""
+                
+                
+        # Veremos si alguna bala nos golpeó
+        for i in range(N):
+            epsilon = 0.01
+            if abs(posBY[i] - nY) < epsilon and (posBX[i] < nX + 0.2 and posBX[i] > nX - 0.2):
+                vidas -= 1
+                posBY[i] = -2 # Ponemos la bala abajo para que el programa lo detecte y vuelva a ponerla desde arriba
+                
         
+        # Mostrador de vidas:
+        if vidas == 3:
+            glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.uniformScale(2))
+            pipelineTexture.drawShape(gpuVida3)
+        
+        if vidas == 2:
+            glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.uniformScale(2))
+            pipelineTexture.drawShape(gpuVida2)
+        
+        if vidas == 1:
+            glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.uniformScale(2))
+            pipelineTexture.drawShape(gpuVida1)
+        
+        
+        # Si pierdes
+        if vidas == 0:
+        
+            # Ponemos la nave bien lejos para que pareciera que desapareció xd
+            nX = -5
+            nY = -5
+            if t % 1 < 0.5:
+                glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
+                pipelineTexture.drawShape(gpuPerdiste1)
+            if t % 1 <1.0 and t % 1 >= 0.5:
+                glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
+                pipelineTexture.drawShape(gpuPerdiste2)
+            
+            for j in range(numDisparo):
+                existeDisparo[j] = False # Nos aseguramos de verdad perder y que nuestro disparo no mate un enemigo y ganar y perder al mismo tiempo xd
+        
+        
+       
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
         
