@@ -38,9 +38,11 @@ def on_key(window, key, scancode, action, mods):
     if key == glfw.KEY_ESCAPE:
         sys.exit()
         
-    if key == glfw.KEY_SPACE:
+    if key == glfw.KEY_SPACE: # Si se presiona espacio, se crea un disparo
         if disparoBool == False:
             disparoBool = True
+
+# Fuciones auxiliares
 
 def createNaveAliada():
     naveAliadaTexture1 = es.toGPUShape(bs.createTextureQuad("naveAliada1.png"), GL_REPEAT, GL_LINEAR)
@@ -174,7 +176,7 @@ if __name__ == "__main__":
     disparoBool = False # Booloeano que me dice si tengo que generar un disparo o no
     numDisparo = 0 # Numero que me ayudará para saber en qué nodo de disparo estoy
     disparosArray = [] # Lista para ir poniendo los nodos de disparo
-    existeDisparo = []
+    existeDisparo = [] # Lista de Booleanos para ir poniendo si existe el disparo o no
     
     
     
@@ -206,15 +208,22 @@ if __name__ == "__main__":
     existeNave = [] 
     
     
+    # Ponemos los nodos de cada nave en una lista para acceder más fácilmente (al menos para mí)
     for i in range(N):
         nave_i = sg.findNode(navesEnemigas, "naveEnemiga"+str(i))
         naves += [nave_i]
-        existeNave += [True]
+        existeNave += [True] # Decimos que la nave recién creada existe
 
-    # Lista con los disparos
-    disparosGPU = []
+
+    # Valor para saber si ganamos el juego
+    ganaste = False
+    gpuGanaste1 = es.toGPUShape(bs.createTextureQuad("ganaste.png"), GL_REPEAT, GL_LINEAR)
+    gpuGanaste2 = es.toGPUShape(bs.createTextureQuad("ganaste2.png"), GL_REPEAT, GL_LINEAR)
     
-    t0 = glfw.get_time()    
+    # Vidas de la nave aliada
+    vidas = 3
+    gpuPerdiste1 = es.toGPUShape(bs.createTextureQuad("perdiste.png"), GL_REPEAT, GL_LINEAR)
+    gpuPerdiste2 = es.toGPUShape(bs.createTextureQuad("perdiste2.png"), GL_REPEAT, GL_LINEAR)
     
     while not glfw.window_should_close(window):
         
@@ -223,12 +232,11 @@ if __name__ == "__main__":
         glfw.poll_events()
         # Update Time
         t = glfw.get_time()
-        dt = t - t0
-        t0 = t
+        
         
         spacePosition = 0.7 * t
         
-        
+        # Lo que pasa cuando se presionan las teclas WASD (la tecla espacio está al principio)
         if (glfw.get_key(window, glfw.KEY_A) == glfw.PRESS):
             if nX > -0.8:  # Para evitar que se salga de la pantalla
                 nX -= 0.0013
@@ -313,19 +321,20 @@ if __name__ == "__main__":
          
             
         # Disparo de la nave aliada
-        if disparoBool:
-            disparoNave = sg.SceneGraphNode("disparo" + str(numDisparo))
-            disparoNave.childs += [disparoNodo] # Se le agrega el nodo que tiene como hijo el gpu del disparo
-            numDisparo += 1 # Pasamos al siguiente para cuando se cree otro disparo, quede con el nombre con el numero siguiente
-            disparos.childs += [disparoNave] # Agregamos el nodo recién creado al nodo gigante
-            xD += [nX]
-            yD += [nY + 0.2]
-            existeDisparo += [True]
-            disparoBool = False
+        if disparoBool:                                                  # Si se creó un disparo al presionar espacio:
+            disparoNave = sg.SceneGraphNode("disparo" + str(numDisparo)) # Creamos un nodo con el disparo
+            disparoNave.childs += [disparoNodo]                          # Se le agrega el nodo que tiene como hijo el gpu del disparo
+            numDisparo += 1                       # Pasamos al siguiente para cuando se cree otro disparo, el nombre quede con el numero siguiente
+            disparos.childs += [disparoNave]                             # Agregamos el nodo recién creado al nodo gigante
+            xD += [nX]                                                # La posición en X será la posición de la nave al momento de crear el disparo
+            yD += [nY + 0.2]                    # Lo mismo de antes pero en Y. Le sumamos 0.2 para que la bala no salga desde el centro de la nave
+            existeDisparo += [True]             # Decimos que este disparo existe
+            disparoBool = False        # Ahora decimos que el Booleano del disparo es False para así volver a crear otro cuando se pulse espacio
             
             
             
-        # Posición de las naves enemigas en el eje x e y
+        # Posición de las naves enemigas
+        
         pos_nEY = []
         for j in range(N):
             ti = t % 3 # Tiempo inicial en que aparecerá cada nave
@@ -342,8 +351,8 @@ if __name__ == "__main__":
                     pos_nEX[i] = 0.8 * np.sin(t + i) # Posicion de la nave en el eje X
                     
                 
-                    # Referenciamos a la lista con los nodos de las naves enemigas
-                    if t > 3*(i+1) and t > 3*(i+2):
+                    
+                    if t > 3*(i+1) and t > 3*(i+2): # despues de un tiempo, la nave deja de bajar y oscila en el 0.7
                         pos_nEY[i] = 0.7
                 
                 
@@ -353,37 +362,65 @@ if __name__ == "__main__":
             
         
         
-        # Dibujando el disparo
+        # Dibujando el disparo y le vemos la condición para cuando choque con una nave enemiga
+                    
         if (numDisparo > 0): # Si existe algún disparo
             for i in range(numDisparo):
-                disparosArray += [sg.findNode(disparos, "disparo" + str(i))]
+                disparosArray += [sg.findNode(disparos, "disparo" + str(i))] # Se agregan los disparos a una lista para acceder a ellos con mas facilidad
                 
            
             for i in range(numDisparo): # Aqui veremos cuando impacte a una nave enemiga
                 if yD[i] < 1.1 and existeDisparo[i]: # Si aún no llega al borde superior de la vetana y si existe el disparo
                     for j in range(N): # Aquí veremos cuando impacte a una nave enemiga
                         epsilon = 0.01
-                        # Si el disparo aún no toca alguna nave enemiga entonces se dibuja el disparo
+                        
+                        # Si el disparo toca una nave enemiga, desaparece el disparo y la nave
                         if ((abs(yD[i] - 0.7) < epsilon) and pos_nEY[j] == 0.7 and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
-                            if existeNave[j]: # Si no se cumple lo anterior, es porque el disparo impactó alguna nave, entonces esa nave se borra de la escena
-                                existeNave[j] = False 
+                            if existeNave[j]: # Revisamos si la nave numero j existe, si sí, entonces:
+                                existeNave[j] = False # Se actualiza su valor de existencia, esto hará que no se dibuje
+                                
+                                # Con estos valores nos aseguramos de que la nave ya no esté al alcance del disparo
                                 pos_nEX[j] = 5 
-                                pos_nEY[j] = -5 # Con estos valores nos aseguramos de que la nave ya no esté al alcance del disparo
+                                pos_nEY[j] = -5 
+                                
+                                # Así nos aseguramos de que el disparo no interfiera con otras naves después de impactar alguna
                                 xD[i] = -5
-                                yD[i] = -6 # Así nos aseguramos de que el disparo no interfiera con otras naves después de impactar alguna
+                                yD[i] = -6
+                                
                                 existeDisparo[i] = False # Ahora el disparo no existe
-                                print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-                        else:
+                                
+                        else: # Si el disparo no ha impactado una nave enemiga entonces se dibuja avanzando hacia arriba 
                             yD[i] +=0.001
                             disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
                             sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
                             
                             
-                else:
-                    
+                else: # Si el disparo ya pasó el borde superior de la pantalla entonces:
                     existeDisparo[i] = False # Ahora el disparo no existe
                             
         
+        # Aquí sabremos si ganamos
+        for i in range(N):
+            if existeNave[i]:
+                ganaste = False
+            else:
+                ganaste = True
+                
+        if ganaste:
+            if t % 1 < 0.5:
+                glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
+                pipelineTexture.drawShape(gpuGanaste1)
+            
+            if t % 1 <1.0 and t % 1 >= 0.5:
+                glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
+                pipelineTexture.drawShape(gpuGanaste2)
+                
+        # Si pierdes
+        """glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
+        pipelineTexture.drawShape(gpuPerdiste1)
+           
+        glUniformMatrix4fv(glGetUniformLocation(pipelineTexture.shaderProgram, "transform"), 1, GL_TRUE, tr.scale(2, 2, 1))
+        pipelineTexture.drawShape(gpuPerdiste2)"""
         
         # Once the render is done, buffers are swapped, showing only the complete scene.
         glfw.swap_buffers(window)
