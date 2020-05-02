@@ -362,16 +362,9 @@ if __name__ == "__main__":
             for i in range(numDisparo): # Aqui veremos cuando impacte a una nave enemiga
                 if yD[i] < 1.1 and existeDisparo[i]: # Si aún no llega al borde superior de la vetana y si existe el disparo
                     for j in range(N): # Aquí veremos cuando impacte a una nave enemiga
-                        
-                        
-                        epsilon = 0.001
+                        epsilon = 0.01
                         # Si el disparo aún no toca alguna nave enemiga entonces se dibuja el disparo
-                        if not ((abs(yD[i] - pos_nEY[j]) < epsilon) and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
-                            yD[i] +=0.001
-                            disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
-                            sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
-                            
-                        else:
+                        if ((abs(yD[i] - 0.7) < epsilon) and pos_nEY[j] == 0.7 and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
                             if existeNave[j]: # Si no se cumple lo anterior, es porque el disparo impactó alguna nave, entonces esa nave se borra de la escena
                                 existeNave[j] = False 
                                 pos_nEX[j] = 5 
@@ -380,6 +373,12 @@ if __name__ == "__main__":
                                 yD[i] = -6 # Así nos aseguramos de que el disparo no interfiera con otras naves después de impactar alguna
                                 existeDisparo[i] = False # Ahora el disparo no existe
                                 print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                        else:
+                            yD[i] +=0.001
+                            disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
+                            sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
+                            
+                            
                 else:
                     
                     existeDisparo[i] = False # Ahora el disparo no existe
