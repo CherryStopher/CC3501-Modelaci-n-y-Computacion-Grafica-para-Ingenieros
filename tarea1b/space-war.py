@@ -4,6 +4,13 @@ Created on Wed Apr 22 01:40:08 2020
 
 @author: crist
 """
+
+"""
+IMPORTANTE: En el video el programa se ejecuta con la tarjeta Nvidia, ya que al hacerlo con la integrada
+la nave y las balas van mucho más rápido debido a la parte de las posiciones con el posY += 0.02 (por ejemplo)
+Para ejecutarlo con la integrada y que salga bien, debe ser posY += 0.002 (por ejemplo)
+"""
+
 import glfw
 import math
 from OpenGL.GL import *
@@ -115,7 +122,7 @@ def createDisparosEnemigos():
     for i in range(N):
         dispEne = sg.SceneGraphNode("disparoEnemigo" + str(i))
         dispEne.childs += [disparoGPU]
-        dispEne.transform = tr.uniformScale(0.3)
+        dispEne.transform = tr.matmul([tr.translate(-3,-3,0),tr.uniformScale(0.2)]) #Lo trasladamos fuera de a pantalla para que no ocurran cosas raras
         disparosEnemigos.childs += [dispEne]
     return disparosEnemigos
         
@@ -235,7 +242,7 @@ if __name__ == "__main__":
         disparoEnemigo_i = sg.findNode(dispEnem, "disparoEnemigo" + str(i))
         disparosEnemigos += [disparoEnemigo_i]
 
-        posBX += [0]
+        posBX += [-3] #Así evitamos que se muestren erroneamente, en verdad da lo mismo este valor porque después lo reemplazaremos
         posBY += [-3]
         
 
@@ -266,19 +273,19 @@ if __name__ == "__main__":
         # Lo que pasa cuando se presionan las teclas WASD (la tecla espacio está al principio)
         if (glfw.get_key(window, glfw.KEY_A) == glfw.PRESS):
             if nX > -0.8:  # Para evitar que se salga de la pantalla
-                nX -= 0.0013
+                nX -= 0.02
         
         if (glfw.get_key(window, glfw.KEY_D) == glfw.PRESS):
             if nX < 0.8:
-                nX += 0.0013
+                nX += 0.02
         
         if (glfw.get_key(window, glfw.KEY_W) == glfw.PRESS):
             if nY < 0:
-                nY += 0.0013
+                nY += 0.02
         
         if (glfw.get_key(window, glfw.KEY_S) == glfw.PRESS):
             if nY > -0.8:
-                nY -= 0.0013
+                nY -= 0.02
                 
 
 
@@ -360,7 +367,7 @@ if __name__ == "__main__":
             
             
             
-        # Posición de las naves enemigas
+        # Posiciones enemigas
         
         pos_nEY = []
         for j in range(N):
@@ -368,9 +375,9 @@ if __name__ == "__main__":
             # lista de tiempos de entrada
             pos_nEY += [1.3 - 0.2 * ti] 
         
-        #Posiciones de los disparos enemigos
         
-            
+        
+        # Posiciones de las naves enemigas    
             
         for i in range(N):
                  
@@ -403,13 +410,13 @@ if __name__ == "__main__":
                         sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")
                                 
                     else:
-                        posBY[i] -= 0.001 # Si la bala aún no sale de la pantalla, va bajando
+                        posBY[i] -= 0.015 # Si la bala aún no sale de la pantalla, va bajando
                         disparosEnemigos[i].transform = tr.matmul([tr.translate(posBX[i], posBY[i], 0), tr.uniformScale(0.2)])
                         sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")   
                         
                 else: # Si la nave ya no existe, el disparo se sigue moviendo y solo de dibuja hasta antes de salir de la pantalla
                     if posBY[i] > -1.2:
-                        posBY[i] -= 0.001
+                        posBY[i] -= 0.015
                         disparosEnemigos[i].transform = tr.matmul([tr.translate(posBX[i], posBY[i], 0), tr.uniformScale(0.2)])
                         sg.drawSceneGraphNode(disparosEnemigos[i], pipelineTexture, "transform")  
                     
@@ -425,7 +432,7 @@ if __name__ == "__main__":
             for i in range(numDisparo): # Aqui veremos cuando impacte a una nave enemiga
                 if yD[i] < 1.1 and existeDisparo[i]: # Si aún no llega al borde superior de la vetana y si existe el disparo
                     for j in range(N): # Aquí veremos cuando impacte a una nave enemiga
-                        epsilon = 0.01
+                        epsilon = 0.05
                         
                         # Si el disparo toca una nave enemiga, desaparece el disparo y la nave
                         if ((abs(yD[i] - 0.7) < epsilon) and pos_nEY[j] < 0.81 and(xD[i] <= pos_nEX[j] + 0.2 and xD[i] >= pos_nEX[j] - 0.2)):
@@ -443,8 +450,8 @@ if __name__ == "__main__":
                                 
                                 existeDisparo[i] = False # Ahora el disparo no existe
                                 
-                        else: # Si el disparo no ha impactado una nave enemiga entonces se dibuja avanzando hacia arriba 
-                            yD[i] +=0.001
+                        else: # Si el disparo aun no ha impactado una nave enemiga entonces se dibuja avanzando hacia arriba 
+                            yD[i] +=0.005
                             disparosArray[i].transform = tr.matmul([tr.translate(xD[i], yD[i], 0), tr.uniformScale(0.2)])
                             sg.drawSceneGraphNode(disparosArray[i], pipelineTexture, "transform")
                             
@@ -473,8 +480,8 @@ if __name__ == "__main__":
                 
         # Veremos si alguna bala nos golpeó
         for i in range(N):
-            epsilon = 0.01
-            if abs(posBY[i] - nY) < epsilon and (posBX[i] < nX + 0.2 and posBX[i] > nX - 0.2):
+            epsilon = 0.05
+            if abs(posBY[i] - nY) < epsilon and (posBX[i] < nX + 0.2 and posBX[i] > nX - 0.2): # Si su posición es muy cercana
                 vidas -= 1
                 posBY[i] = -2 # Ponemos la bala abajo para que el programa lo detecte y vuelva a ponerla desde arriba
                 
