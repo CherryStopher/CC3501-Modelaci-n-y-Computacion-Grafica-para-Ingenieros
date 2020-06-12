@@ -14,59 +14,47 @@ class Shape:
         self.textureFileName = textureFileName
         
 
-def createTextureCube2(image_filename):
+def createTextureCubeIncomplete(image_filename):
 
     # Defining locations and texture coordinates for each vertex of the shape  
     vertices = [
     #   positions         texture coordinates
-    # Z+: number 1
-        -0.5, -0.5,  0.5, 0, 1/3,
-         0.5, -0.5,  0.5, 1/2, 1/3,
-         0.5,  0.5,  0.5, 1/2, 0,
-        -0.5,  0.5,  0.5, 0, 0,
-
-    # Z-: number 6
-        -0.5, -0.5, -0.5, 1/2, 1,
-         0.5, -0.5, -0.5, 1, 1,
-         0.5,  0.5, -0.5, 1, 2/3,
-        -0.5,  0.5, -0.5, 1/2, 2/3,
-        
-    # X+: number 5
+    # X+
          0.5, -0.5, -0.5, 0, 1,
-         0.5,  0.5, -0.5, 1/2, 1,
-         0.5,  0.5,  0.5, 1/2, 2/3,
-         0.5, -0.5,  0.5, 0, 2/3,
+         0.5,  0.5, -0.5, 1, 1,
+         0.5,  0.5,  0.5, 1, 0,
+         0.5, -0.5,  0.5, 0, 0
+,
  
-    # X-: number 2
-        -0.5, -0.5, -0.5, 1/2, 1/3,
-        -0.5,  0.5, -0.5, 1, 1/3,
+    # X-
+        -0.5, -0.5, -0.5, 1, 1,
+        -0.5,  0.5, -0.5, 0, 1,
+        -0.5,  0.5,  0.5, 0, 0,
+        -0.5, -0.5,  0.5, 1, 0,
+
+    # Y+
+        -0.5,  0.5, -0.5, 1, 1,
+         0.5,  0.5, -0.5, 0, 1,
+         0.5,  0.5,  0.5, 0, 0,
         -0.5,  0.5,  0.5, 1, 0,
-        -0.5, -0.5,  0.5, 1/2, 0,
 
-    # Y+: number 4
-        -0.5,  0.5, -0.5, 1/2, 2/3,
-         0.5,  0.5, -0.5, 1, 2/3,
-         0.5,  0.5,  0.5, 1, 1/3,
-        -0.5,  0.5,  0.5, 1/2, 1/3,
-
-    # Y-: number 3
-        -0.5, -0.5, -0.5, 0, 2/3,
-         0.5, -0.5, -0.5, 1/2, 2/3,
-         0.5, -0.5,  0.5, 1/2, 1/3,
-        -0.5, -0.5,  0.5, 0, 1/3
+    # Y-
+        -0.5, -0.5, -0.5, 0, 1,
+         0.5, -0.5, -0.5, 1, 1,
+         0.5, -0.5,  0.5, 1, 0,
+        -0.5, -0.5,  0.5, 0, 0
         ]
 
     # Defining connections among vertices
     # We have a triangle every 3 indices specified
     indices = [
-          0, 1, 2, 2, 3, 0, # Z+
-          7, 6, 5, 5, 4, 7, # Z-
+          0, 1, 2, 2, 3, 0, # X+
+          7, 6, 5, 5, 4, 7, # Y-
           8, 9,10,10,11, 8, # X+
-         15,14,13,13,12,15, # X-
-         19,18,17,17,16,19, # Y+
-         20,21,22,22,23,20] # Y-
+         15,14,13,13,12,15] # Y-
 
     return Shape(vertices, indices, image_filename)
+
 
 def createAxis(length=1.0):
 
@@ -278,46 +266,6 @@ def createTextureCube(image_filename):
 
     return Shape(vertices, indices, image_filename)
 
-def createTextureCube3(image_filename):
-
-    # Defining locations and texture coordinates for each vertex of the shape  
-    vertices = [
-    #   positions         texture coordinates
-    # X+
-         0.5, -0.5, -0.5, 0, 1,
-         0.5,  0.5, -0.5, 1, 1,
-         0.5,  0.5,  0.5, 1, 0,
-         0.5, -0.5,  0.5, 0, 0
-,
- 
-    # X-
-        -0.5, -0.5, -0.5, 1, 1,
-        -0.5,  0.5, -0.5, 0, 1,
-        -0.5,  0.5,  0.5, 0, 0,
-        -0.5, -0.5,  0.5, 1, 0,
-
-    # Y+
-        -0.5,  0.5, -0.5, 1, 1,
-         0.5,  0.5, -0.5, 0, 1,
-         0.5,  0.5,  0.5, 0, 0,
-        -0.5,  0.5,  0.5, 1, 0,
-
-    # Y-
-        -0.5, -0.5, -0.5, 0, 1,
-         0.5, -0.5, -0.5, 1, 1,
-         0.5, -0.5,  0.5, 1, 0,
-        -0.5, -0.5,  0.5, 0, 0
-        ]
-
-    # Defining connections among vertices
-    # We have a triangle every 3 indices specified
-    indices = [
-          0, 1, 2, 2, 3, 0, # Z+
-          7, 6, 5, 5, 4, 7, # Z-
-          8, 9,10,10,11, 8, # X+
-         15,14,13,13,12,15] # Y-
-
-    return Shape(vertices, indices, image_filename)
 
 
 def createRainbowNormalsCube():

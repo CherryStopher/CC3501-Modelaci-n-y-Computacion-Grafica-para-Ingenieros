@@ -232,7 +232,7 @@ if __name__ == "__main__":
     
     gpuAxis = es.toGPUShape(bs.createAxis(4))
     
-    gpuFondo = es.toGPUShape(bs.createTextureCube3("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
+    gpuFondo = es.toGPUShape(bs.createTextureCubeIncomplete("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
     gpuCielo = es.toGPUShape(bs.createTextureQuad("nubes.png"), GL_REPEAT, GL_LINEAR)
     gpuLago = es.toGPUShape(bs.createTextureQuad("lago.png"), GL_REPEAT, GL_LINEAR)
 
@@ -256,10 +256,21 @@ if __name__ == "__main__":
         dt = t1 - t0
         t0 = t1
         
+        
+        # Getting the mouse location in opengl coordinates
+        mousePosX = 2 * (controller.mousePos[0] - width/2) / width
+        mousePosY = 2 * (height/2 - controller.mousePos[1]) / height
+        
+        
         #Posiciones
         posX = 0
         posY = 0
         posZ = 0
+        camX = -5
+        camY = -5
+        atX = 0
+        atY = 0
+        atZ = 0
         
         # Condiciones de que se ingresa en sys.argv
         if pajaros == 1:
@@ -277,8 +288,16 @@ if __name__ == "__main__":
             posX = 0
             posY = 0
             posZ = 0
+            
             camX = -5
             camY = -5
+            camZ = 3
+                
+            atX = (5 * np.sin(np.pi*mousePosX) + camX)
+            atY = (5 * np.cos(np.pi*mousePosX) + camY)
+            atZ = (5 * np.sin(2*mousePosY) + camZ)
+            
+            
             
             
             
@@ -287,11 +306,11 @@ if __name__ == "__main__":
 
         
 
-        viewPos = np.array([camX,camY,1])
+        viewPos = np.array([camX,camY,camZ])
 
         view = tr.lookAt(
             viewPos,
-            np.array([0,0,0]),
+            np.array([atX,atY,atZ]),
             np.array([0,0,1]))
 
         rotation_theta = glfw.get_time()
@@ -312,9 +331,7 @@ if __name__ == "__main__":
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             
         
-        # Getting the mouse location in opengl coordinates
-        mousePosX = 2 * (controller.mousePos[0] - width/2) / width
-        mousePosY = 2 * (height/2 - controller.mousePos[1]) / height
+        
 
         # The axis is drawn without lighting effects
         if controller.showAxis:
@@ -359,13 +376,13 @@ if __name__ == "__main__":
             drawStaticBird(gpuBird, mousePosX, mousePosY, lightingPipeline)
         # 5 pájaros    
         else:
-            drawMovementBird(gpuBird, t1*4, lightingPipeline, posX, posY, posZ)
+            drawMovementBird(gpuBird, t0*4, lightingPipeline, posX, posY, posZ)
         
         
         
         # Dibujando el fondo con texturas
         
-        escala = 30
+        escala = 50
         textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
 
         glUseProgram(textureShaderProgram.shaderProgram)
