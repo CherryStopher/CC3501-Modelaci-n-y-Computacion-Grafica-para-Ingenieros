@@ -149,10 +149,10 @@ def drawStaticBird(gpu, mousePosX, mousePosY, lightingPipeline):
 def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ):
     # Moviendo partes del cuerpo
     alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
-    alaIzqNodo.transform = tr.matmul([tr.rotationX(-np.cos(theta)), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+    alaIzqNodo.transform = tr.matmul([tr.rotationX(-0.5*np.cos(theta)), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
         
     alaDerNodo = sg.findNode(gpuBird, "alaDer")
-    alaDerNodo.transform = tr.matmul([tr.rotationX(np.cos(theta)), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+    alaDerNodo.transform = tr.matmul([tr.rotationX(0.5*np.cos(theta)), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
         
     colaNodo = sg.findNode(gpuBird, "cola")
     colaNodo.transform = tr.matmul([tr.rotationY(-np.cos(theta)*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
@@ -168,6 +168,75 @@ def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ):
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
     
+
+
+# Curvas 
+    
+def generateT(t):
+    return np.array([[1, t, t**2, t**3]]).T
+
+def catmullRomMatrix(P0, P1, P2, P3):
+    
+    # Generate a matrix concatenating the columns
+    G = np.concatenate((P0, P1, P2, P3), axis=1)
+
+    # Catmull-Rom base matrix is a constant
+    Mcr = [[0, -1/2, 2/2, -1/2], [2/2, 0, -5/2, 3/2], [0, 1/2, 4/2, -3/2], [0, 0, -1/2, 1/2]]
+    
+    return np.matmul(G, Mcr)  
+
+ 
+# M is the cubic curve matrix, N is the number of samples between 0 and 1
+def evalCurve(M, N):
+    # The parameter t should move between 0 and 1
+    ts = np.linspace(0.0, 1.0, N)
+    
+    # The computed value in R3 for each sample will be stored here
+    curve = np.ndarray(shape=(N, 3), dtype=float)
+    
+    for i in range(len(ts)):
+        T = generateT(ts[i])
+        curve[i, 0:3] = np.matmul(M, T).T
+
+    print(curve)
+        
+    return curve
+
+"""
+def readOBJ(filename):
+    coordenadas = []
+    with open(filename, 'r') as file:
+        for line in file.readlines():
+            aux = line.strip().split(",")
+            coordenadas += [[float(coord) for coord in aux[0:]]]
+    print(coordenadas)
+    return coordenadas    
+"""
+def readOBJ(filename):
+
+    vertices = []
+    
+
+    with open(filename, 'r') as file:
+        puntos = []
+        curva = []
+        for line in file.readlines():
+            aux = line.strip().split(",")
+            puntos += [np.array([[float(coord) for coord in aux[0:]]]).T]
+        
+        
+        GMcr1 = catmullRomMatrix(puntos[0], puntos[1], puntos[2], puntos[3])
+        GMcr2 = catmullRomMatrix(puntos[1], puntos[2], puntos[3], puntos[4])
+        
+        
+        N = 10
+        
+        catmullRomCurve1 = evalCurve(GMcr1, N)
+        catmullRomCurve2 = evalCurve(GMcr1, N)
+        catmullRomCurve1 += [catmullRomCurve2]
+        
+        return catmullRomCurve1
+        
     
     
 if __name__ == "__main__":
@@ -227,6 +296,7 @@ if __name__ == "__main__":
         gpuBird = createBird()
         
     else:
+        puntos = readOBJ("trayectoria1.csv")
         gpuBird = createBird()
     
     
