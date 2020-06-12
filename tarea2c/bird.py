@@ -166,6 +166,8 @@ if __name__ == "__main__":
     gpuAxis = es.toGPUShape(bs.createAxis(4))
     gpuBird = createBird()
     gpuFondo = es.toGPUShape(bs.createTextureCube3("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
+    gpuCielo = es.toGPUShape(bs.createTextureQuad("nubes.png"), GL_REPEAT, GL_LINEAR)
+    gpuLago = es.toGPUShape(bs.createTextureQuad("lago.png"), GL_REPEAT, GL_LINEAR)
 
 
     t0 = glfw.get_time()
@@ -199,7 +201,7 @@ if __name__ == "__main__":
         camX = 5 * np.sin(camera_theta)
         camY = 5 * np.cos(camera_theta)
 
-        viewPos = np.array([camX,camY,3])
+        viewPos = np.array([camX,camY,1])
 
         view = tr.lookAt(
             viewPos,
@@ -290,14 +292,27 @@ if __name__ == "__main__":
         
         # Dibujando el fondo con texturas
         
-        escala = 100
+        escala = 30
         textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
+
         
         glUseProgram(textureShaderProgram.shaderProgram)
         glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
         glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, tr.uniformScale(escala))
         textureShaderProgram.drawShape(gpuFondo)
+        
+        cieloTransf = tr.matmul([tr.translate(0, 0, escala/2), tr.uniformScale(escala)])
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, cieloTransf)
+        textureShaderProgram.drawShape(gpuCielo)
+        
+        lagoTransf = tr.matmul([tr.translate(0, 0, -escala/2), tr.uniformScale(escala)])
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, lagoTransf)
+        textureShaderProgram.drawShape(gpuLago)
         
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.
         glfw.swap_buffers(window)
