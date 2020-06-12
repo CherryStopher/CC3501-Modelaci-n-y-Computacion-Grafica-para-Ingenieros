@@ -11,24 +11,13 @@ import easy_shaders as es
 import lighting_shaders as ls
 import scene_graph as sg
 
-LIGHT_FLAT    = 0
-LIGHT_GOURAUD = 1
-LIGHT_PHONG   = 2
-
-
-SHAPE_RED_CUBE     = 0
-SHAPE_GREEN_CUBE   = 1
-SHAPE_BLUE_CUBE    = 2
-SHAPE_YELLOW_CUBE  = 3
-SHAPE_RAINBOW_CUBE = 4
 
 # A class to store the application control
 class Controller:
     def __init__(self):
         self.fillPolygon = True
         self.showAxis = True
-        self.lightingModel = LIGHT_FLAT
-        self.shape = SHAPE_RED_CUBE
+        self.mousePos = (0.0, 0.0)
 
 
 # We will use the global controller as communication with the callback function
@@ -47,6 +36,10 @@ def on_key(window, key, scancode, action, mods):
     elif key == glfw.KEY_ESCAPE:
         sys.exit()
         
+def cursor_pos_callback(window, x, y):
+    global controller
+    controller.mousePos = (x,y)
+
 
 def createBird():
     gpuGris = es.toGPUShape(bs.createColorNormalsCube(0.8,0.8,0.8))
@@ -65,18 +58,18 @@ def createBird():
     cuello.childs += [gpuNegro]
     
     # Cabeza
-    cabeza = sg.SceneGraphNode("cabeza")
-    cabeza.transform = tr.matmul([tr.translate(0.9, 0, 0.5), tr.uniformScale(0.5)])
-    cabeza.childs += [gpuVerde]
+    cara = sg.SceneGraphNode("cara")
+    cara.transform = tr.matmul([tr.translate(0.9, 0, 0.5), tr.uniformScale(0.5)])
+    cara.childs += [gpuVerde]
     
     # Ala izquierda
     alaIzq = sg.SceneGraphNode("alaIzq")
-    alaIzq.transform = tr.matmul([tr.rotationX(np.pi/4), tr.translate(0.1, -0.4, 0.2), tr.scale(0.5, 0.7, 0.1)])
+    alaIzq.transform = tr.matmul([tr.rotationX(np.pi/4), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
     alaIzq.childs += [gpuGris]
     
     # Ala derecha
     alaDer = sg.SceneGraphNode("alaDer")
-    alaDer.transform = tr.matmul([tr.rotationX(3*np.pi/4), tr.translate(0.1, -0.4, -0.2), tr.scale(0.5, 0.7, 0.1)])
+    alaDer.transform = tr.matmul([tr.rotationX(3*np.pi/4), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
     alaDer.childs += [gpuGris]
     
     # Cola
@@ -105,6 +98,11 @@ def createBird():
     ojoDer.transform = tr.translate(1.15, 0.1, 0.55)
     ojoDer.childs += [ojo]
     
+    # Cabeza
+    cabeza = sg.SceneGraphNode("cabeza")
+    cabeza.childs += [cara, ojoIzq, ojoDer, boca]
+    
+    
     # Pata
     pata = sg.SceneGraphNode("pata")
     pata.transform =tr.matmul([tr.rotationY(-1*np.pi/6), tr.scale(0.5, 0.1, 0.1)])
@@ -123,8 +121,7 @@ def createBird():
     
     # Bird
     bird = sg.SceneGraphNode("bird")
-    bird.childs += [cuerpo, cuello, cabeza, alaIzq, alaDer, cola, boca, ojoIzq, ojoDer,
-                    pataIzq, pataDer]
+    bird.childs += [cuerpo, cuello, cabeza, alaIzq, alaDer, cola, pataIzq, pataDer]
     bird.transform = tr.rotationZ(-1*np.pi)
     return bird
 
@@ -149,10 +146,10 @@ if __name__ == "__main__":
     # Connecting the callback function 'on_key' to handle keyboard events
     glfw.set_key_callback(window, on_key)
 
-    # Different shader programs for different lighting strategies
-    flatPipeline = ls.SimpleFlatShaderProgram()
-    gouraudPipeline = ls.SimpleGouraudShaderProgram()
-    phongPipeline = ls.SimplePhongShaderProgram()
+     # Connecting callback functions to handle mouse events:
+    # - Cursor moving over the window
+    glfw.set_cursor_pos_callback(window, cursor_pos_callback)
+
 
     # This shader program does not consider lighting
     mvpPipeline = es.SimpleModelViewProjectionShaderProgram()
@@ -165,7 +162,6 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
 
     # Creating shapes on GPU memory
-    
     
     gpuAxis = es.toGPUShape(bs.createAxis(4))
     gpuBird = createBird()
@@ -226,6 +222,11 @@ if __name__ == "__main__":
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         else:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            
+        
+        # Getting the mouse location in opengl coordinates
+        mousePosX = 2 * (controller.mousePos[0] - width/2) / width
+        mousePosY = 2 * (height/2 - controller.mousePos[1]) / height
 
         # The axis is drawn without lighting effects
         if controller.showAxis:
@@ -236,7 +237,7 @@ if __name__ == "__main__":
             mvpPipeline.drawShape(gpuAxis, GL_LINES)
         
         
-        lightingPipeline = phongPipeline
+        lightingPipeline = ls.SimplePhongShaderProgram()
         
         glUseProgram(lightingPipeline.shaderProgram)
 
@@ -252,7 +253,6 @@ if __name__ == "__main__":
         glUniform3f(glGetUniformLocation(lightingPipeline.shaderProgram, "Kd"), 1.0, 1.0, 1.0)
         glUniform3f(glGetUniformLocation(lightingPipeline.shaderProgram, "Ks"), 0.2, 0.2, 0.2)
 
-        # TO DO: Explore different parameter combinations to understand their effect!
 
         glUniform3f(glGetUniformLocation(lightingPipeline.shaderProgram, "lightPosition"), -5, -5, 5)
         glUniform3f(glGetUniformLocation(lightingPipeline.shaderProgram, "viewPosition"), viewPos[0], viewPos[1], viewPos[2])
@@ -266,6 +266,23 @@ if __name__ == "__main__":
         glUniformMatrix4fv(glGetUniformLocation(lightingPipeline.shaderProgram, "view"), 1, GL_TRUE, view)
         glUniformMatrix4fv(glGetUniformLocation(lightingPipeline.shaderProgram, "model"), 1, GL_TRUE, model)
 
+        
+        # Moviendo partes del cuerpo
+        alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
+        alaIzqNodo.transform = tr.matmul([tr.rotationX(-mousePosY*0.5), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+        
+        alaDerNodo = sg.findNode(gpuBird, "alaDer")
+        alaDerNodo.transform = tr.matmul([tr.rotationX(mousePosY*0.5), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+        
+        colaNodo = sg.findNode(gpuBird, "cola")
+        colaNodo.transform = tr.matmul([tr.rotationY(-mousePosY*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
+        
+        cabezaNodo = sg.findNode(gpuBird, "cabeza")
+        cabezaNodo.transform = tr.translate(0, 0, -mousePosY*0.02)
+        
+        cuelloNodo = sg.findNode(gpuBird, "cuello")
+        cuelloNodo.transform = tr.matmul([tr.translate(0.7 + mousePosY*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
+        
         # Drawing
         sg.drawSceneGraphNode(gpuBird, lightingPipeline, "model")
         
