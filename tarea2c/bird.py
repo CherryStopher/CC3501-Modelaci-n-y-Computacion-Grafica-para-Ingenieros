@@ -125,8 +125,66 @@ def createBird():
     bird.transform = tr.rotationZ(-1*np.pi)
     return bird
 
+def drawStaticBird(gpu, mousePosX, mousePosY, lightingPipeline):
+    # Moviendo partes del cuerpo
+    alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
+    alaIzqNodo.transform = tr.matmul([tr.rotationX(-mousePosY*0.5), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+        
+    alaDerNodo = sg.findNode(gpuBird, "alaDer")
+    alaDerNodo.transform = tr.matmul([tr.rotationX(mousePosY*0.5), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+        
+    colaNodo = sg.findNode(gpuBird, "cola")
+    colaNodo.transform = tr.matmul([tr.rotationY(-mousePosY*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
+        
+    cabezaNodo = sg.findNode(gpuBird, "cabeza")
+    cabezaNodo.transform = tr.translate(0, 0, -mousePosY*0.02)
+        
+    cuelloNodo = sg.findNode(gpuBird, "cuello")
+    cuelloNodo.transform = tr.matmul([tr.translate(0.7 + mousePosY*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
+        
+    # Drawing
+    sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
+    
+    
+def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ):
+    # Moviendo partes del cuerpo
+    alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
+    alaIzqNodo.transform = tr.matmul([tr.rotationX(-np.cos(theta)), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+        
+    alaDerNodo = sg.findNode(gpuBird, "alaDer")
+    alaDerNodo.transform = tr.matmul([tr.rotationX(np.cos(theta)), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+        
+    colaNodo = sg.findNode(gpuBird, "cola")
+    colaNodo.transform = tr.matmul([tr.rotationY(-np.cos(theta)*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
+        
+    cabezaNodo = sg.findNode(gpuBird, "cabeza")
+    cabezaNodo.transform = tr.translate(0, 0, -np.cos(theta)*0.02)
+        
+    cuelloNodo = sg.findNode(gpuBird, "cuello")
+    cuelloNodo.transform = tr.matmul([tr.translate(0.7 + np.cos(theta)*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
+        
+    gpuBird.transform = tr.matmul([tr.translate(posX, posY, posZ), tr.rotationZ(-1*np.pi)])
+    
+    # Drawing
+    sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
+    
+    
     
 if __name__ == "__main__":
+    
+    # Variable pra saber en cual de los 2 casos estamos
+    pajaros = 1
+    archivo = None
+    
+    if len(sys.argv)==1: # Si solo se llama a la función sin el archivo .csv
+        pajaros = 1
+        
+    elif len(sys.argv) == 2 and ".csv" in sys.argv[1]: # Si lo siguiente que se escribe es un archivo .scv
+        pajaros = 5
+        archivo = sys.argv[1]
+        print(archivo)
+        
+        
 
     # Initialize glfw
     if not glfw.init():
@@ -163,8 +221,17 @@ if __name__ == "__main__":
 
     # Creating shapes on GPU memory
     
+    gpuBird = None
+    
+    if pajaros == 1:
+        gpuBird = createBird()
+        
+    else:
+        gpuBird = createBird()
+    
+    
     gpuAxis = es.toGPUShape(bs.createAxis(4))
-    gpuBird = createBird()
+    
     gpuFondo = es.toGPUShape(bs.createTextureCube3("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
     gpuCielo = es.toGPUShape(bs.createTextureQuad("nubes.png"), GL_REPEAT, GL_LINEAR)
     gpuLago = es.toGPUShape(bs.createTextureQuad("lago.png"), GL_REPEAT, GL_LINEAR)
@@ -188,26 +255,44 @@ if __name__ == "__main__":
         t1 = glfw.get_time()
         dt = t1 - t0
         t0 = t1
-
-        if (glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS):
-            camera_theta -= 2 * dt
-
-        if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
-            camera_theta += 2* dt
-
+        
+        #Posiciones
+        posX = 0
+        posY = 0
+        posZ = 0
+        
+        # Condiciones de que se ingresa en sys.argv
+        if pajaros == 1:
+            
+            if (glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS):
+                camera_theta -= 2 * dt
+                
+            if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
+                camera_theta += 2* dt
+                
+            camX = 5 * np.sin(camera_theta)
+            camY = 5 * np.cos(camera_theta)
+            
+        else:
+            posX = 0
+            posY = 0
+            posZ = 0
+            camX = -5
+            camY = -5
+            
+            
+            
         projection = tr.ortho(-1, 1, -1, 1, 0.1, 100)
         projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
 
-        camX = 5 * np.sin(camera_theta)
-        camY = 5 * np.cos(camera_theta)
+        
 
         viewPos = np.array([camX,camY,1])
 
         view = tr.lookAt(
             viewPos,
             np.array([0,0,0]),
-            np.array([0,0,1])
-        )
+            np.array([0,0,1]))
 
         rotation_theta = glfw.get_time()
 
@@ -269,24 +354,12 @@ if __name__ == "__main__":
         glUniformMatrix4fv(glGetUniformLocation(lightingPipeline.shaderProgram, "model"), 1, GL_TRUE, model)
 
         
-        # Moviendo partes del cuerpo
-        alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
-        alaIzqNodo.transform = tr.matmul([tr.rotationX(-mousePosY*0.5), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
-        
-        alaDerNodo = sg.findNode(gpuBird, "alaDer")
-        alaDerNodo.transform = tr.matmul([tr.rotationX(mousePosY*0.5), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
-        
-        colaNodo = sg.findNode(gpuBird, "cola")
-        colaNodo.transform = tr.matmul([tr.rotationY(-mousePosY*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
-        
-        cabezaNodo = sg.findNode(gpuBird, "cabeza")
-        cabezaNodo.transform = tr.translate(0, 0, -mousePosY*0.02)
-        
-        cuelloNodo = sg.findNode(gpuBird, "cuello")
-        cuelloNodo.transform = tr.matmul([tr.translate(0.7 + mousePosY*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
-        
-        # Drawing
-        sg.drawSceneGraphNode(gpuBird, lightingPipeline, "model")
+        # Pajaro único
+        if pajaros == 1:
+            drawStaticBird(gpuBird, mousePosX, mousePosY, lightingPipeline)
+        # 5 pájaros    
+        else:
+            drawMovementBird(gpuBird, t1*4, lightingPipeline, posX, posY, posZ)
         
         
         
@@ -295,7 +368,6 @@ if __name__ == "__main__":
         escala = 30
         textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
 
-        
         glUseProgram(textureShaderProgram.shaderProgram)
         glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
