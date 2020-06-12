@@ -165,6 +165,7 @@ if __name__ == "__main__":
     
     gpuAxis = es.toGPUShape(bs.createAxis(4))
     gpuBird = createBird()
+    gpuFondo = es.toGPUShape(bs.createTextureCube3("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
 
 
     t0 = glfw.get_time()
@@ -198,7 +199,7 @@ if __name__ == "__main__":
         camX = 5 * np.sin(camera_theta)
         camY = 5 * np.cos(camera_theta)
 
-        viewPos = np.array([camX,camY,1])
+        viewPos = np.array([camX,camY,3])
 
         view = tr.lookAt(
             viewPos,
@@ -238,7 +239,6 @@ if __name__ == "__main__":
         
         
         lightingPipeline = ls.SimplePhongShaderProgram()
-        
         glUseProgram(lightingPipeline.shaderProgram)
 
         # Setting all uniform shader variables
@@ -285,6 +285,19 @@ if __name__ == "__main__":
         
         # Drawing
         sg.drawSceneGraphNode(gpuBird, lightingPipeline, "model")
+        
+        
+        
+        # Dibujando el fondo con texturas
+        
+        escala = 100
+        textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
+        
+        glUseProgram(textureShaderProgram.shaderProgram)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, tr.uniformScale(escala))
+        textureShaderProgram.drawShape(gpuFondo)
         
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.
         glfw.swap_buffers(window)
