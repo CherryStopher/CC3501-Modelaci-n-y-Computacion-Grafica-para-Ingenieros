@@ -11,6 +11,7 @@ import easy_shaders as es
 import lighting_shaders as ls
 import scene_graph as sg
 
+from bird import *
 
 # A class to store the application control
 class Controller:
@@ -40,142 +41,102 @@ def cursor_pos_callback(window, x, y):
     global controller
     controller.mousePos = (x,y)
 
-
-def createBird():
-    gpuGris = es.toGPUShape(bs.createColorNormalsCube(0.8,0.8,0.8))
-    gpuAmarillo = es.toGPUShape(bs.createColorNormalsCube(252/256, 191/256, 0))
-    gpuNegro = es.toGPUShape(bs.createColorNormalsCube(0.1,0.1,0.1))
-    gpuVerde = es.toGPUShape(bs.createColorNormalsCube(0,0.5,0))
-    
-    # Cuerpo
-    cuerpo = sg.SceneGraphNode("cuerpo")
-    cuerpo.transform = tr.scale(1.2, 0.5, 0.4)
-    cuerpo.childs += [gpuGris]
-    
-    # Cuello
-    cuello = sg.SceneGraphNode("cuello")
-    cuello.transform = tr.matmul([tr.translate(0.7, 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.5, 0.2, 0.2)])
-    cuello.childs += [gpuNegro]
-    
-    # Cara
-    cara = sg.SceneGraphNode("cara")
-    cara.transform = tr.matmul([tr.translate(0.9, 0, 0.5), tr.uniformScale(0.5)])
-    cara.childs += [gpuVerde]
-    
-    # Ala izquierda
-    alaIzq = sg.SceneGraphNode("alaIzq")
-    alaIzq.transform = tr.matmul([tr.rotationX(np.pi/4), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
-    alaIzq.childs += [gpuGris]
-    
-    # Ala derecha
-    alaDer = sg.SceneGraphNode("alaDer")
-    alaDer.transform = tr.matmul([tr.rotationX(3*np.pi/4), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
-    alaDer.childs += [gpuGris]
-    
-    # Cola
-    cola = sg.SceneGraphNode("cola")
-    cola.transform = tr.matmul([tr.translate(-0.65, 0, 0.2), tr.rotationY(np.pi/4), tr.scale(0.3, 0.2, 0.1)])
-    cola.childs += [gpuGris]
-    
-    # Boca
-    boca = sg.SceneGraphNode("boca")
-    boca.transform = tr.matmul([tr.translate(1.2, 0, 0.4), tr.scale(0.4, 0.3, 0.1)])
-    boca.childs += [gpuAmarillo]
-    
-    # Ojo
-    ojo = sg.SceneGraphNode("ojo")
-    ojo.transform = tr.uniformScale(0.05)
-    ojo.childs += [gpuNegro]
-    
-    # Ojo izquierdo
-    ojoIzq = sg.SceneGraphNode("ojoIzq")
-    ojoIzq.transform = tr.translate(1.15, -0.1, 0.55)
-    ojoIzq.childs += [ojo]
-    
-    # Ojo derecho
-    ojoDer = sg.SceneGraphNode("ojoDer")
-    ojoDer.transform = tr.translate(1.15, 0.1, 0.55)
-    ojoDer.childs += [ojo]
-    
-    # Visera gorro
-    visGorro = sg.SceneGraphNode("visGorro")
-    visGorro.transform = tr.matmul([tr.translate(1, 0, 0.8), tr.scale(0.7, 0.5, 0.1)])
-    visGorro.childs += [gpuNegro]
-    
-    # Gorra
-    gorra = sg.SceneGraphNode("gorra")
-    gorra.transform = tr.matmul([tr.translate(0.9, 0, 0.95), tr.scale(0.5, 0.5, 0.3)])
-    gorra.childs += [gpuNegro]
-    
-    # Amarillo 1
-    amarillo1 = sg.SceneGraphNode("amarillo1")
-    amarillo1.transform = tr.matmul([tr.translate(1.17, 0, 0.87), tr.scale(0.05, 0.5, 0.05)])
-    amarillo1.childs += [gpuAmarillo]
-    
-    # Amarillo 2
-    amarillo2 = sg.SceneGraphNode("amarillo2")
-    amarillo2.transform = tr.matmul([tr.translate(1.17, -0.08, 0.95), tr.scale(0.05, 0.09, 0.09)])
-    amarillo2.childs += [gpuAmarillo]
-    
-    # Amarillo 3
-    amarillo3 = sg.SceneGraphNode("amarillo3")
-    amarillo3.transform = tr.matmul([tr.translate(1.17, 0.07, 1.0), tr.scale(0.05, 0.11, 0.16)])
-    amarillo3.childs += [gpuAmarillo]
-    
-    # Cabeza
-    cabeza = sg.SceneGraphNode("cabeza")
-    cabeza.childs += [cara, ojoIzq, ojoDer, boca, visGorro, gorra, amarillo1, amarillo2, amarillo3]
-    
-    
-    # Pata
-    pata = sg.SceneGraphNode("pata")
-    pata.transform =tr.matmul([tr.rotationY(-1*np.pi/6), tr.scale(0.5, 0.1, 0.1)])
-    pata.childs += [gpuAmarillo]
-    
-    # Pata izquierda
-    pataIzq = sg.SceneGraphNode("pataIzq")
-    pataIzq.transform = tr.translate(-0.2, 0.1, -0.2)
-    pataIzq.childs += [pata]
-    
-    # Pata derecha
-    pataDer = sg.SceneGraphNode("pataDer")
-    pataDer.transform = tr.translate(-0.2, -0.1, -0.2)
-    pataDer.childs += [pata]
-    
-    
-    # Bird
-    bird = sg.SceneGraphNode("bird")
-    bird.childs += [cuerpo, cuello, cabeza, alaIzq, alaDer, cola, pataIzq, pataDer]
-    bird.transform = tr.rotationZ(-1*np.pi)
-    return bird
-
-def drawStaticBird(gpu, mousePosX, mousePosY, lightingPipeline):
+def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ, scala=0.5):
     # Moviendo partes del cuerpo
-    alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
-    alaIzqNodo.transform = tr.matmul([tr.rotationX(-mousePosY*0.5), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+    alaIzqNodo = sg.findNode(gpu, "alaIzq")
+    alaIzqNodo.transform = tr.matmul([tr.rotationX(-0.5*np.cos(theta)), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
         
-    alaDerNodo = sg.findNode(gpuBird, "alaDer")
-    alaDerNodo.transform = tr.matmul([tr.rotationX(mousePosY*0.5), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
+    alaDerNodo = sg.findNode(gpu, "alaDer")
+    alaDerNodo.transform = tr.matmul([tr.rotationX(0.5*np.cos(theta)), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
         
-    colaNodo = sg.findNode(gpuBird, "cola")
-    colaNodo.transform = tr.matmul([tr.rotationY(-mousePosY*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
+    colaNodo = sg.findNode(gpu, "cola")
+    colaNodo.transform = tr.matmul([tr.rotationY(-np.cos(theta)*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
         
-    cabezaNodo = sg.findNode(gpuBird, "cabeza")
-    cabezaNodo.transform = tr.translate(0, 0, -mousePosY*0.02)
+    cabezaNodo = sg.findNode(gpu, "cabeza")
+    cabezaNodo.transform = tr.translate(0, 0, -np.cos(theta)*0.07)
         
-    cuelloNodo = sg.findNode(gpuBird, "cuello")
-    cuelloNodo.transform = tr.matmul([tr.translate(0.7 + mousePosY*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
+    cuelloNodo = sg.findNode(gpu, "cuello")
+    cuelloNodo.transform = tr.matmul([tr.translate(0.7 + np.cos(theta)*0.07 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
         
+    gpu.transform = tr.matmul([tr.translate(posX, posY, posZ), tr.rotationZ(-1*np.pi), tr.uniformScale(scala)])
+    
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
     
+# Curvas 
+    
+def generateT(t):
+    return np.array([[1, t, t**2, t**3]]).T
+
+def catmullRomMatrix(P0, P1, P2, P3):
+    
+    # Generate a matrix concatenating the columns
+    G = np.concatenate((P0, P1, P2, P3), axis=1)
+
+    # Catmull-Rom base matrix is a constant
+    Mcr = [[0, -1/2, 2/2, -1/2], [2/2, 0, -5/2, 3/2], [0, 1/2, 4/2, -3/2], [0, 0, -1/2, 1/2]]
+    
+    return np.matmul(G, Mcr)  
+
+ 
+# M is the cubic curve matrix, N is the number of samples between 0 and 1
+def evalCurve(M, N):
+    # The parameter t should move between 0 and 1
+    ts = np.linspace(0.0, 1.0, N)
+    
+    # The computed value in R3 for each sample will be stored here
+    curve = np.ndarray(shape=(N, 3), dtype=float)
+    
+    for i in range(len(ts)):
+        T = generateT(ts[i])
+        curve[i, 0:3] = np.matmul(M, T).T
+
+        
+    return curve
+
+
+def readOBJ(filename):
+
+    vertices = []
     
 
-
-
+    with open(filename, 'r') as file:
+        puntos = []
+        curva = []
+        for line in file.readlines():
+            aux = line.strip().split(",")
+            puntos += [np.array([[float(coord) for coord in aux[0:]]]).T]
+        
+        
+        GMcr1 = catmullRomMatrix(puntos[0], puntos[1], puntos[2], puntos[3])
+        GMcr2 = catmullRomMatrix(puntos[1], puntos[2], puntos[3], puntos[4])
+        
+        
+        N = 100
+        
+        catmullRomCurve1 = evalCurve(GMcr1, N)
+        catmullRomCurve2 = evalCurve(GMcr2, N)
+        
+        coordenadas = []
+        
+        for i in range(N):
+            coordenadas.append(catmullRomCurve1[i])
+            
+        for j in range(1,N):
+            coordenadas.append(catmullRomCurve2[j])
+            
+        catmullRomCurveTotal = np.array(coordenadas)
+        
+        return catmullRomCurveTotal
+        
+    
+    
 if __name__ == "__main__":
     
-        
+    
+    #archivo = sys.argv[1]
+    archivo = "path4.csv"
+   
 
     # Initialize glfw
     if not glfw.init():
@@ -184,7 +145,7 @@ if __name__ == "__main__":
     width =800
     height = 800
 
-    window = glfw.create_window(width, height, "Patito Bonito", None, None)
+    window = glfw.create_window(width, height, "Patitos Bonitos", None, None)
 
     if not window:
         glfw.terminate()
@@ -201,7 +162,7 @@ if __name__ == "__main__":
 
 
     # This shader program does not consider lighting
-    mvpPipeline = es.SimpleModelViewProjectionShaderProgram()
+    #mvpPipeline = es.SimpleModelViewProjectionShaderProgram()
 
     # Setting up the clear screen color
     glClearColor(0.85, 0.85, 0.85, 1.0)
@@ -212,11 +173,31 @@ if __name__ == "__main__":
 
     # Creating shapes on GPU memory
     
-    gpuBird = createBird()
+    
+    birdPosX = []
+    birdPosY = []
+    birdPosZ = []
+    N = 100
+    
+    puntos = readOBJ(archivo)
+    
+    gpuBird1 = createBird()
+    gpuBird2 = createBird()
+    gpuBird3 = createBird()
+    gpuBird4 = createBird()
+    gpuBird5 = createBird()
+    gpuBirds = [gpuBird1, gpuBird2, gpuBird3, gpuBird4, gpuBird5]
+        
+    # Creamos las coordenadas basadas en la curva
+    for i in range(2*N-1):
+        birdPosX.append(puntos[i][0])
+        birdPosY.append(puntos[i][1])
+        birdPosZ.append(puntos[i][2])
+        
+
 
     gpuAxis = es.toGPUShape(bs.createAxis(4))
     
-    # Función nueva agregada en basic_shapes.py
     gpuFondo = es.toGPUShape(bs.createTextureCubeIncomplete("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
     gpuCielo = es.toGPUShape(bs.createTextureQuad("nubes.png"), GL_REPEAT, GL_LINEAR)
     gpuLago = es.toGPUShape(bs.createTextureQuad("lago.png"), GL_REPEAT, GL_LINEAR)
@@ -248,24 +229,20 @@ if __name__ == "__main__":
         
         
         #Posiciones
-    
-        atX = 0
-        atY = 0
-        atZ = 0
-        
-        if (glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS):
-            camera_theta -= 2 * dt
+            
+        camX = -9
+        camY = -3
+        camZ = 5
                 
-        if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
-            camera_theta += 2* dt
-                
-        camX = -5 * np.sin(camera_theta)
-        camY = -5 * np.cos(camera_theta)
-        camZ = 3
+        atX = (5 * np.sin(np.pi*mousePosX) + camX)
+        atY = (5 * np.cos(np.pi*mousePosX) + camY)
+        atZ = (5 * np.sin(2*mousePosY) + camZ)
+            
 
 
         projection = tr.perspective(45, float(width)/float(height), 0.1, 300)
 
+        
 
         viewPos = np.array([camX,camY,camZ])
 
@@ -322,9 +299,25 @@ if __name__ == "__main__":
         glUniformMatrix4fv(glGetUniformLocation(lightingPipeline.shaderProgram, "model"), 1, GL_TRUE, model)
 
         
-        # Dibujando el patito
-        drawStaticBird(gpuBird, mousePosX, mousePosY, lightingPipeline)
+ 
+        # Dibujando los patitos 
+        # Los -num es para que aparezcan gradualmente
+        
+        indice1 = int(t0*10//1) -20
+        indice2 = int(t0*10//1) -60
+        indice3 = int(t0*10//1) -100
+        indice4 = int(t0*10//1) -140
+        indice5 = int(t0*10//1) -180
+        indices = [indice1, indice2, indice3, indice4, indice5]
+            
+        for i in range(5):
+            if indices[i] >= 0:
+                if indices[i] < 2*N-1:
+                    drawMovementBird(gpuBirds[i] , (i/2+1)*t0*6, lightingPipeline, birdPosX[indices[i]], birdPosY[indices[i]], birdPosZ[indices[i]],0.5*(i/3+1)/2)
 
+
+        
+        
         # Dibujando el fondo con texturas
         
         escala = 100
@@ -352,5 +345,7 @@ if __name__ == "__main__":
         glfw.swap_buffers(window)
 
     glfw.terminate()
+
+
 
 
