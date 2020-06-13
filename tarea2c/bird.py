@@ -163,7 +163,7 @@ def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ):
     cuelloNodo = sg.findNode(gpuBird, "cuello")
     cuelloNodo.transform = tr.matmul([tr.translate(0.7 + np.cos(theta)*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
         
-    gpuBird.transform = tr.matmul([tr.translate(posX, posY, posZ), tr.rotationZ(-1*np.pi)])
+    gpuBird.transform = tr.matmul([tr.translate(posX, posY, posZ), tr.rotationZ(-1*np.pi), tr.uniformScale(0.5)])
     
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
@@ -198,7 +198,6 @@ def evalCurve(M, N):
         T = generateT(ts[i])
         curve[i, 0:3] = np.matmul(M, T).T
 
-    print(curve)
         
     return curve
 
@@ -229,13 +228,22 @@ def readOBJ(filename):
         GMcr2 = catmullRomMatrix(puntos[1], puntos[2], puntos[3], puntos[4])
         
         
-        N = 10
+        N = 50
         
         catmullRomCurve1 = evalCurve(GMcr1, N)
-        catmullRomCurve2 = evalCurve(GMcr1, N)
-        catmullRomCurve1 += [catmullRomCurve2]
+        catmullRomCurve2 = evalCurve(GMcr2, N)
         
-        return catmullRomCurve1
+        coordenadas = []
+        
+        for i in range(N):
+            coordenadas.append(catmullRomCurve1[i])
+            
+        for j in range(1,N):
+            coordenadas.append(catmullRomCurve2[j])
+            
+        catmullRomCurveTotal = np.array(coordenadas)
+        
+        return catmullRomCurveTotal
         
     
     
@@ -251,7 +259,6 @@ if __name__ == "__main__":
     elif len(sys.argv) == 2 and ".csv" in sys.argv[1]: # Si lo siguiente que se escribe es un archivo .scv
         pajaros = 5
         archivo = sys.argv[1]
-        print(archivo)
         
         
 
@@ -291,13 +298,29 @@ if __name__ == "__main__":
     # Creating shapes on GPU memory
     
     gpuBird = None
+    posX = 0
+    posY = 0
+    posZ = 0
+    birdPosX = []
+    birdPosY = []
+    birdPosZ = []
+    N = 50
     
     if pajaros == 1:
         gpuBird = createBird()
         
     else:
         puntos = readOBJ("trayectoria1.csv")
+        print(puntos)
         gpuBird = createBird()
+        
+        # Creamos las coordenadas basadas en la curva
+        for i in range(2*N-1):
+            birdPosX.append(puntos[i][0])
+            birdPosY.append(puntos[i][1])
+            birdPosZ.append(puntos[i][2])
+        
+    
     
     
     gpuAxis = es.toGPUShape(bs.createAxis(4))
@@ -333,9 +356,6 @@ if __name__ == "__main__":
         
         
         #Posiciones
-        posX = 0
-        posY = 0
-        posZ = 0
         camX = -5
         camY = -5
         atX = 0
@@ -351,8 +371,9 @@ if __name__ == "__main__":
             if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
                 camera_theta += 2* dt
                 
-            camX = 5 * np.sin(camera_theta)
-            camY = 5 * np.cos(camera_theta)
+            camX = -5 * np.sin(camera_theta)
+            camY = -5 * np.cos(camera_theta)
+            camZ = 3
             
         else:
             posX = 0
@@ -367,10 +388,8 @@ if __name__ == "__main__":
             atY = (5 * np.cos(np.pi*mousePosX) + camY)
             atZ = (5 * np.sin(2*mousePosY) + camZ)
             
-            
-            
-            
-            
+
+
         projection = tr.ortho(-1, 1, -1, 1, 0.1, 100)
         projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
 
@@ -446,7 +465,12 @@ if __name__ == "__main__":
             drawStaticBird(gpuBird, mousePosX, mousePosY, lightingPipeline)
         # 5 pájaros    
         else:
-            drawMovementBird(gpuBird, t0*4, lightingPipeline, posX, posY, posZ)
+            indice = int(t0*10//1) -20   # El -20 es por el delay de 1.5 segs en abrirse la ventana
+            print(indice)
+            if indice >= 0:
+                if indice < 2*N-1:
+                    drawMovementBird(gpuBird, t0*5, lightingPipeline, birdPosX[indice], birdPosY[indice], birdPosZ[indice])
+                    #drawMovementBird(gpuBird, t0*4, lightingPipeline, 0, 0, 0)
         
         
         
