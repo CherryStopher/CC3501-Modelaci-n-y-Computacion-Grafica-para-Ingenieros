@@ -146,24 +146,24 @@ def drawStaticBird(gpu, mousePosX, mousePosY, lightingPipeline):
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
     
     
-def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ):
+def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ, scala=0.5):
     # Moviendo partes del cuerpo
-    alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
+    alaIzqNodo = sg.findNode(gpu, "alaIzq")
     alaIzqNodo.transform = tr.matmul([tr.rotationX(-0.5*np.cos(theta)), tr.translate(0.1, -0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
         
-    alaDerNodo = sg.findNode(gpuBird, "alaDer")
+    alaDerNodo = sg.findNode(gpu, "alaDer")
     alaDerNodo.transform = tr.matmul([tr.rotationX(0.5*np.cos(theta)), tr.translate(0.1, 0.55, 0.1), tr.scale(0.5, 0.7, 0.1)])
         
-    colaNodo = sg.findNode(gpuBird, "cola")
+    colaNodo = sg.findNode(gpu, "cola")
     colaNodo.transform = tr.matmul([tr.rotationY(-np.cos(theta)*0.1), tr.translate(-0.7, 0, 0), tr.scale(0.4, 0.2, 0.1)])
         
-    cabezaNodo = sg.findNode(gpuBird, "cabeza")
-    cabezaNodo.transform = tr.translate(0, 0, -np.cos(theta)*0.02)
+    cabezaNodo = sg.findNode(gpu, "cabeza")
+    cabezaNodo.transform = tr.translate(0, 0, -np.cos(theta)*0.07)
         
-    cuelloNodo = sg.findNode(gpuBird, "cuello")
-    cuelloNodo.transform = tr.matmul([tr.translate(0.7 + np.cos(theta)*0.03 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
+    cuelloNodo = sg.findNode(gpu, "cuello")
+    cuelloNodo.transform = tr.matmul([tr.translate(0.7 + np.cos(theta)*0.07 , 0, 0.3), tr.rotationY(3*np.pi/4), tr.scale(0.6, 0.2, 0.2)])
         
-    gpuBird.transform = tr.matmul([tr.translate(posX, posY, posZ), tr.rotationZ(-1*np.pi), tr.uniformScale(0.5)])
+    gpu.transform = tr.matmul([tr.translate(posX, posY, posZ), tr.rotationZ(-1*np.pi), tr.uniformScale(scala)])
     
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
@@ -201,16 +201,7 @@ def evalCurve(M, N):
         
     return curve
 
-"""
-def readOBJ(filename):
-    coordenadas = []
-    with open(filename, 'r') as file:
-        for line in file.readlines():
-            aux = line.strip().split(",")
-            coordenadas += [[float(coord) for coord in aux[0:]]]
-    print(coordenadas)
-    return coordenadas    
-"""
+
 def readOBJ(filename):
 
     vertices = []
@@ -228,7 +219,7 @@ def readOBJ(filename):
         GMcr2 = catmullRomMatrix(puntos[1], puntos[2], puntos[3], puntos[4])
         
         
-        N = 50
+        N = 100
         
         catmullRomCurve1 = evalCurve(GMcr1, N)
         catmullRomCurve2 = evalCurve(GMcr2, N)
@@ -304,15 +295,20 @@ if __name__ == "__main__":
     birdPosX = []
     birdPosY = []
     birdPosZ = []
-    N = 50
+    N = 100
     
     if pajaros == 1:
         gpuBird = createBird()
         
     else:
-        puntos = readOBJ("trayectoria1.csv")
+        puntos = readOBJ(archivo)
         print(puntos)
-        gpuBird = createBird()
+        gpuBird1 = createBird()
+        gpuBird2 = createBird()
+        gpuBird3 = createBird()
+        gpuBird4 = createBird()
+        gpuBird5 = createBird()
+        gpuBirds = [gpuBird1, gpuBird2, gpuBird3, gpuBird4, gpuBird5]
         
         # Creamos las coordenadas basadas en la curva
         for i in range(2*N-1):
@@ -380,9 +376,9 @@ if __name__ == "__main__":
             posY = 0
             posZ = 0
             
-            camX = -5
-            camY = -5
-            camZ = 3
+            camX = -9
+            camY = -3
+            camZ = 5
                 
             atX = (5 * np.sin(np.pi*mousePosX) + camX)
             atY = (5 * np.cos(np.pi*mousePosX) + camY)
@@ -390,8 +386,7 @@ if __name__ == "__main__":
             
 
 
-        projection = tr.ortho(-1, 1, -1, 1, 0.1, 100)
-        projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
+        projection = tr.perspective(45, float(width)/float(height), 0.1, 300)
 
         
 
@@ -405,7 +400,6 @@ if __name__ == "__main__":
         rotation_theta = glfw.get_time()
 
         axis = np.array([1,-1,1])
-        #axis = np.array([0,0,1])
         axis = axis / np.linalg.norm(axis)
         model = tr.rotationA(rotation_theta, axis)
         model = tr.identity()
@@ -419,16 +413,7 @@ if __name__ == "__main__":
         else:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             
-        
-        
 
-        # The axis is drawn without lighting effects
-        if controller.showAxis:
-            glUseProgram(mvpPipeline.shaderProgram)
-            glUniformMatrix4fv(glGetUniformLocation(mvpPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
-            glUniformMatrix4fv(glGetUniformLocation(mvpPipeline.shaderProgram, "view"), 1, GL_TRUE, view)
-            glUniformMatrix4fv(glGetUniformLocation(mvpPipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
-            mvpPipeline.drawShape(gpuAxis, GL_LINES)
         
         
         lightingPipeline = ls.SimplePhongShaderProgram()
@@ -465,18 +450,24 @@ if __name__ == "__main__":
             drawStaticBird(gpuBird, mousePosX, mousePosY, lightingPipeline)
         # 5 pájaros    
         else:
-            indice = int(t0*10//1) -20   # El -20 es por el delay de 1.5 segs en abrirse la ventana
-            print(indice)
-            if indice >= 0:
-                if indice < 2*N-1:
-                    drawMovementBird(gpuBird, t0*5, lightingPipeline, birdPosX[indice], birdPosY[indice], birdPosZ[indice])
+            indice1 = int(t0*10//1) -20   # El -20 es por el delay de 2 segs en abrirse la ventana
+            indice2 = int(t0*10//1) -60
+            indice3 = int(t0*10//1) -100
+            indice4 = int(t0*10//1) -140
+            indice5 = int(t0*10//1) -180
+            indices = [indice1, indice2, indice3, indice4, indice5]
+            
+            for i in range(5):
+                if indices[i] >= 0:
+                    if indices[i] < 2*N-1:
+                        drawMovementBird(gpuBirds[i] , (i/2+1)*t0*6, lightingPipeline, birdPosX[indices[i]], birdPosY[indices[i]], birdPosZ[indices[i]],0.5*(i/3+1)/2)
                     #drawMovementBird(gpuBird, t0*4, lightingPipeline, 0, 0, 0)
-        
+
         
         
         # Dibujando el fondo con texturas
         
-        escala = 50
+        escala = 100
         textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
 
         glUseProgram(textureShaderProgram.shaderProgram)
