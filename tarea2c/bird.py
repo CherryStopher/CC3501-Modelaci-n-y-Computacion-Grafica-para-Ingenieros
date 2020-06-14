@@ -41,6 +41,7 @@ def cursor_pos_callback(window, x, y):
     controller.mousePos = (x,y)
 
 
+# Función que crea la GPU de un patito
 def createBird():
     gpuGris = es.toGPUShape(bs.createColorNormalsCube(0.8,0.8,0.8))
     gpuAmarillo = es.toGPUShape(bs.createColorNormalsCube(252/256, 191/256, 0))
@@ -149,6 +150,7 @@ def createBird():
     bird.transform = tr.rotationZ(-1*np.pi)
     return bird
 
+# Función que dibuja al pato
 def drawStaticBird(gpu, mousePosX, mousePosY, lightingPipeline):
     # Moviendo partes del cuerpo
     alaIzqNodo = sg.findNode(gpuBird, "alaIzq")
@@ -175,7 +177,6 @@ def drawStaticBird(gpu, mousePosX, mousePosY, lightingPipeline):
 
 if __name__ == "__main__":
     
-        
 
     # Initialize glfw
     if not glfw.init():
@@ -216,7 +217,7 @@ if __name__ == "__main__":
 
     gpuAxis = es.toGPUShape(bs.createAxis(4))
     
-    # Función nueva agregada en basic_shapes.py
+    # Función nueva agregada en basic_shapes.py: createtextureCubeIncomplete(...)
     gpuFondo = es.toGPUShape(bs.createTextureCubeIncomplete("fondo1alreves.png"), GL_REPEAT, GL_LINEAR)
     gpuCielo = es.toGPUShape(bs.createTextureQuad("nubes.png"), GL_REPEAT, GL_LINEAR)
     gpuLago = es.toGPUShape(bs.createTextureQuad("lago.png"), GL_REPEAT, GL_LINEAR)
@@ -325,8 +326,8 @@ if __name__ == "__main__":
         # Dibujando el patito
         drawStaticBird(gpuBird, mousePosX, mousePosY, lightingPipeline)
 
+
         # Dibujando el fondo con texturas
-        
         escala = 100
         textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
 

@@ -40,7 +40,9 @@ def on_key(window, key, scancode, action, mods):
 def cursor_pos_callback(window, x, y):
     global controller
     controller.mousePos = (x,y)
-
+    
+    
+# Función que dibuja los patos moviéndose
 def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ, scala=0.5):
     # Moviendo partes del cuerpo
     alaIzqNodo = sg.findNode(gpu, "alaIzq")
@@ -62,6 +64,7 @@ def drawMovementBird(gpu,theta, lightingPipeline, posX, posY, posZ, scala=0.5):
     
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
+  
     
 # Curvas 
     
@@ -90,19 +93,17 @@ def evalCurve(M, N):
     for i in range(len(ts)):
         T = generateT(ts[i])
         curve[i, 0:3] = np.matmul(M, T).T
-
-        
+   
     return curve
 
 
+# Función que lee el csv y retorna una matriz de puntos generados por Catmull-Rom
 def readOBJ(filename):
 
-    vertices = []
-    
 
     with open(filename, 'r') as file:
         puntos = []
-        curva = []
+        
         for line in file.readlines():
             aux = line.strip().split(",")
             puntos += [np.array([[float(coord) for coord in aux[0:]]]).T]
@@ -134,8 +135,7 @@ def readOBJ(filename):
 if __name__ == "__main__":
     
     
-    #archivo = sys.argv[1]
-    archivo = "path4.csv"
+    archivo = sys.argv[1]
    
 
     # Initialize glfw
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     birdPosX = []
     birdPosY = []
     birdPosZ = []
-    N = 100
+    N = 100       # N es la cantidad de puntos que teníamos por cada vez que se usaba Catmull-Rom
     
     puntos = readOBJ(archivo)
     
@@ -304,10 +304,10 @@ if __name__ == "__main__":
         # Los -num es para que aparezcan gradualmente
         
         indice1 = int(t0*10//1) -20
-        indice2 = int(t0*10//1) -60
-        indice3 = int(t0*10//1) -100
-        indice4 = int(t0*10//1) -140
-        indice5 = int(t0*10//1) -180
+        indice2 = int(t0*10//1) -70
+        indice3 = int(t0*10//1) -120
+        indice4 = int(t0*10//1) -170
+        indice5 = int(t0*10//1) -220
         indices = [indice1, indice2, indice3, indice4, indice5]
             
         for i in range(5):
