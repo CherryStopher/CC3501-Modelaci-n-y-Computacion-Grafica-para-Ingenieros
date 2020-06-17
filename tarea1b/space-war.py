@@ -139,8 +139,8 @@ if __name__ == "__main__":
     if not glfw.init():
         sys.exit()
 
-    width = 800
-    height =800
+    width = 1000
+    height =1000
     
     window = glfw.create_window(width, height, "Space War", None, None)
 

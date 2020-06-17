@@ -136,14 +136,14 @@ if __name__ == "__main__":
     
     
     archivo = sys.argv[1]
-   
+
 
     # Initialize glfw
     if not glfw.init():
         sys.exit()
 
-    width =800
-    height = 800
+    width = 1000
+    height = 1000
 
     window = glfw.create_window(width, height, "Patitos Bonitos", None, None)
 
@@ -301,22 +301,13 @@ if __name__ == "__main__":
         
  
         # Dibujando los patitos 
-        # Los -num es para que aparezcan gradualmente
+    
         
-        indice1 = int(t0*10//1) -20
-        indice2 = int(t0*10//1) -70
-        indice3 = int(t0*10//1) -120
-        indice4 = int(t0*10//1) -170
-        indice5 = int(t0*10//1) -220
-        indices = [indice1, indice2, indice3, indice4, indice5]
-            
+        indice = int(t0*10//1) -20
+        
         for i in range(5):
-            if indices[i] >= 0:
-                if indices[i] < 2*N-1:
-                    drawMovementBird(gpuBirds[i] , (i/2+1)*t0*6, lightingPipeline, birdPosX[indices[i]], birdPosY[indices[i]], birdPosZ[indices[i]],0.5*(i/3+1)/2)
-
-
-        
+            if indice >= 0 and indice < 2*N-1:
+                drawMovementBird(gpuBirds[i], (i/2+1)*t0*6, lightingPipeline, birdPosX[indice], birdPosY[indice]+i, birdPosZ[indice])
         
         # Dibujando el fondo con texturas
         
