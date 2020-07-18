@@ -107,6 +107,9 @@ def readOBJ(filename):
         for line in file.readlines():
             aux = line.strip().split(",")
             puntos += [np.array([[float(coord) for coord in aux[0:]]]).T]
+            
+            
+        norma1 =     
         
         
         GMcr1 = catmullRomMatrix(puntos[0], puntos[1], puntos[2], puntos[3])
