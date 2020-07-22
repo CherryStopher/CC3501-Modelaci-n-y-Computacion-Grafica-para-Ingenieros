@@ -356,7 +356,7 @@ class SimpleModelViewProjectionShaderProgram:
             out vec4 outColor;
             void main()
             {
-                outColor = vec4(newColor, 1.0f);
+                outColor = vec4(newColor, 0.5 * 1.0f);
             }
             """
 

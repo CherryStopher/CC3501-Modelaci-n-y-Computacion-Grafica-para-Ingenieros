@@ -369,7 +369,7 @@ ub[0:nv, 0:nl, nh] = ambient_temperature
 # Guardando la matriz
 np.save(filename, ub)
 
-"""
+
 # Plot
 X, Y, Z = np.mgrid[0:W:11j, 0:L:21j, 0:H:14j]
 
@@ -390,7 +390,7 @@ ax.set_ylabel("Length")
 ax.set_zlabel("Hight")
 
 plt.show()
-"""   
+
         
         
    
