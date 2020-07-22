@@ -12,6 +12,8 @@ import easy_shaders as es
 import lighting_shaders as ls
 import scene_graph as sg
 
+import random
+
 def jsonDict(filename):
     with open(filename) as file:
         data = json.load(file)
@@ -21,14 +23,29 @@ dim = jsonDict('problem-setup.json')
 # Problem setup
 H = int(dim["height"])
 W = int(dim["width"])
-L = int(dim["lenght" ])
+L = int(dim["lenght"])
 
+
+archivo = sys.argv[1]
+
+num = jsonDict(archivo)
+
+t_a = int(num['t_a'])
+t_b = int(num["t_b"])
+t_c = int(num["t_c"])
+n_a = int(num["n_a"])
+n_b = int(num["n_b"])
+n_c = int(num["n_c"])
+filename = num["filename"]
+
+"""
 t_a = 15
 t_b = 10
 t_c = 25
 n_a = 5
 n_b = 3
 n_c = 7
+"""
 
 
 def createFish(r,g,b):
@@ -100,8 +117,9 @@ def createFish(r,g,b):
 
 
 # Función que dibuja los peces moviendose
-def drawMovementFish(gpu,theta, lightingPipeline, posX=0, posY=0, posZ=0, scala=0.5):
+def drawMovementFish(gpu,theta, posX, posY, posZ, lightingPipeline, scala=0.5):
     
+
     # Moviendo la cola
     cola = sg.findNode(gpu, "colaFinal")
     cola.transform = tr.matmul([tr.rotationZ(0.3*np.cos(4*theta)), tr.scale(1, 0.5, 1)])
@@ -118,7 +136,7 @@ def drawMovementFish(gpu,theta, lightingPipeline, posX=0, posY=0, posZ=0, scala=
     else:
         reflex = tr.scale(-1, 1, 1)
     
-    pez.transform = tr.matmul([tr.translate(xPos, 0, 0),reflex, tr.uniformScale(0.7)])
+    pez.transform = tr.matmul([ tr.translate(posX-2, posY-3, posZ),reflex, tr.uniformScale(0.2)])
     
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
@@ -267,17 +285,15 @@ if __name__ == "__main__":
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    
 
     # Creating shapes on GPU memory
     
-    gpuPez = createFish(1, 102/255, 0) # Naranjo
-    #gpuPez = createFish(0.2, 0.8, 0.2) # Verde
-    #gpuPez = createFish(0, 153/255, 153/255) # Verde Agua
     
     gpuAxis = es.toGPUShape(bs.createAxis(7))
     
     # Visualizar los voxeles
-    load_voxels = np.load('solution.npy')
+    load_voxels = np.load(filename)
     X, Y, Z = np.mgrid[0:W:11j, 0:L:21j, 0:H:14j]
 
     
@@ -288,38 +304,27 @@ if __name__ == "__main__":
     for i in range(X.shape[0]-1):
         for j in range(X.shape[1]-1):
             for k in range(X.shape[2]-1):
-                # print(X[i,j,k])
+                #print(X[i,j,k])
                 if load_voxels[i,j,k] >= t_a -2 and load_voxels[i,j,k] <= t_a +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [1, 0, 0])
-                    merge(destinationShape=isosurface1, strideSize=7, sourceShape=temp_shape)
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [1, 100/255, 0])
+                    merge(destinationShape=isosurface1, strideSize=6, sourceShape=temp_shape)
                 
                 if load_voxels[i,j,k] >= t_b -2 and load_voxels[i,j,k] <= t_b +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 1, 0])
-                    merge(destinationShape=isosurface2, strideSize=7, sourceShape=temp_shape)
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [129/255, 218/255, 27/255])
+                    merge(destinationShape=isosurface2, strideSize=6, sourceShape=temp_shape)
                     
                 if load_voxels[i,j,k] >= t_c -2 and load_voxels[i,j,k] <= t_c +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 0, 1])
-                    merge(destinationShape=isosurface3, strideSize=7, sourceShape=temp_shape)
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 215/255, 1])
+                    merge(destinationShape=isosurface3, strideSize=6, sourceShape=temp_shape)
     
-    for i in range(X.shape[0]-1):
-        for j in range(X.shape[1]-1):
-            for k in range(X.shape[2]-1):
-                # print(X[i,j,k])
-                if load_voxels[i,j,k] >= t_a -2 and load_voxels[i,j,k] <= t_a +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [1, 0, 0])
-                    merge(destinationShape=isosurface1, strideSize=7, sourceShape=temp_shape)
-                
-                if load_voxels[i,j,k] >= t_b -2 and load_voxels[i,j,k] <= t_b +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 1, 0])
-                    merge(destinationShape=isosurface2, strideSize=7, sourceShape=temp_shape)
-                    
-                if load_voxels[i,j,k] >= t_c -2 and load_voxels[i,j,k] <= t_c +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 0, 1])
-                    merge(destinationShape=isosurface3, strideSize=7, sourceShape=temp_shape)
 
+    
     gpu_surface1 = es.toGPUShape(isosurface1)
     gpu_surface2 = es.toGPUShape(isosurface2)
     gpu_surface3 = es.toGPUShape(isosurface3)
+    
+    
+    
 
     gpuPecera = es.toGPUShape(bs.createColorCube(0.7, 0.7, 0.7))
     
@@ -328,6 +333,60 @@ if __name__ == "__main__":
     
     t0 = glfw.get_time()
     camera_theta = np.pi/4
+    
+    # Peces
+    
+    #Tipo A
+    A = isosurface1.vertices
+
+    pezLocA = []
+    pezPosA = []
+    pecesA = []
+    
+    for i in range(0, len(A), 6):
+        pos = (A[i], A[i+1], A[i+2])
+        pezLocA += [pos]
+    
+    for i in range(n_a):
+        pez = createFish(1, 0, 0)
+        pecesA += [pez]
+        
+        pezPosA += [random.choice(pezLocA)]
+    
+    #Tipo B
+    B = isosurface2.vertices
+    pezLocB = []
+    pezPosB = []
+    pecesB = []
+    
+    for i in range(0, len(B), 6):
+        pos = (B[i], B[i+1], B[i+2])
+        pezLocB += [pos]
+    
+    for i in range(n_b):
+        pez = createFish(0, 1, 0)
+        pecesB += [pez]
+        
+        pezPosB += [random.choice(pezLocB)]
+        
+        
+    #Tipo C
+    C = isosurface3.vertices
+    pezLocC = []
+    pezPosC = []
+    pecesC = []
+    
+    for i in range(0, len(C), 6):
+        pos = (C[i], C[i+1], C[i+2])
+        pezLocC += [pos]
+    
+    for i in range(n_c):
+        pez = createFish(0, 130/255, 1)
+        pecesC += [pez]
+        
+        pezPosC += [random.choice(pezLocC)]
+        
+        
     
     
     
@@ -343,17 +402,17 @@ if __name__ == "__main__":
         t0 = t1
 
         if (glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS):
-            camera_theta -= 2 * dt
+            camera_theta += 2 * dt
 
         if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
-            camera_theta += 2* dt
+            camera_theta -= 2* dt
             
         if (glfw.get_key(window, glfw.KEY_DOWN) == glfw.PRESS):
-            controller.zoom += 0.1
+            controller.zoom += 0.05
             
         if (glfw.get_key(window, glfw.KEY_UP) == glfw.PRESS):
             if controller.zoom >= 1:
-                controller.zoom -= 0.1
+                controller.zoom -= 0.05
 
 
         projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
@@ -422,39 +481,69 @@ if __name__ == "__main__":
 
         # Drawing
         # Peces
+        
         glDisable(GL_CULL_FACE)
-        drawMovementFish(gpuPez, t0, lightingPipeline)
+        
+        # Peces A
+        if controller.voxel1 == True:
+            for i in range(n_a):
+                gpuPez = pecesA[i]
+                posPez = pezPosA[i]
+                drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)
+                
+        
+        # Peces B
+        if controller.voxel2 == True:
+            for i in range(n_b):
+                gpuPez = pecesB[i]
+                posPez = pezPosB[i]
+                drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)
+                
+            
+        # Peces C
+        if controller.voxel3 == True:
+            for i in range(n_c):
+                gpuPez = pecesC[i]
+                posPez = pezPosC[i]
+                drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)    
+                
+        
+        
         
         glUseProgram(pipeline.shaderProgram)
-        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
-        pipeline.drawShape(gpuAxis, GL_LINES)
+        
         
         # Voxeles
         
-        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, tr.identity())
-        pipeline.drawShape(gpuAxis, GL_LINES)
+        
         
         
         transf = tr.matmul([tr.translate(-2,-3,0),tr.uniformScale(1)])
+               
         transf2 = tr.matmul([tr.translate(-0.5,0,2),tr.scale(3.3,6.3,4.3)])
+        
         
         glEnable(GL_CULL_FACE)
         
-        if controller.voxel1 == True:
-            glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf)
-            
-            pipeline.drawShape(gpu_surface1)
-            
+        
         if controller.voxel2 == True:
             glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf)
             
             pipeline.drawShape(gpu_surface2)
+       
+        
+        if controller.voxel1 == True:
+            glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf)
+            pipeline.drawShape(gpu_surface1)
+            
+            
+            
         if controller.voxel3 == True:
             glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf)
             
             pipeline.drawShape(gpu_surface3) 
             
-            
+          
         # Pecera    
         glUseProgram(pipeline.shaderProgram)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf2)
