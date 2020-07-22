@@ -197,6 +197,7 @@ class Controller:
         self.voxel1 = False
         self.voxel2 = False
         self.voxel3 = False
+        self.zoom = 2
 
 
 # We will use the global controller as communication with the callback function
@@ -223,7 +224,9 @@ def on_key(window, key, scancode, action, mods):
         
     elif key == glfw.KEY_C:
         controller.voxel3 = not controller.voxel3
-        
+    
+    
+    
 def cursor_pos_callback(window, x, y):
     global controller
     controller.mousePos = (x,y)
@@ -250,7 +253,8 @@ if __name__ == "__main__":
     # Connecting the callback function 'on_key' to handle keyboard events
     glfw.set_key_callback(window, on_key)
 
-    pipeline = es.SimpleModelViewProjectionShaderProgram()   
+    pipeline = es.SimpleModelViewProjectionShaderProgram2()  
+    pipeline3 = es.SimpleModelViewProjectionShaderProgram2()  
     lightingPipeline = ls.SimplePhongShaderProgram()
     
     glUseProgram(pipeline.shaderProgram)
@@ -261,6 +265,8 @@ if __name__ == "__main__":
     # As we work in 3D, we need to check which part is in front,
     # and which one is at the back
     glEnable(GL_DEPTH_TEST)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     # Creating shapes on GPU memory
     
@@ -294,12 +300,28 @@ if __name__ == "__main__":
                 if load_voxels[i,j,k] >= t_c -2 and load_voxels[i,j,k] <= t_c +2:
                     temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 0, 1])
                     merge(destinationShape=isosurface3, strideSize=7, sourceShape=temp_shape)
+    
+    for i in range(X.shape[0]-1):
+        for j in range(X.shape[1]-1):
+            for k in range(X.shape[2]-1):
+                # print(X[i,j,k])
+                if load_voxels[i,j,k] >= t_a -2 and load_voxels[i,j,k] <= t_a +2:
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [1, 0, 0])
+                    merge(destinationShape=isosurface1, strideSize=7, sourceShape=temp_shape)
+                
+                if load_voxels[i,j,k] >= t_b -2 and load_voxels[i,j,k] <= t_b +2:
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 1, 0])
+                    merge(destinationShape=isosurface2, strideSize=7, sourceShape=temp_shape)
+                    
+                if load_voxels[i,j,k] >= t_c -2 and load_voxels[i,j,k] <= t_c +2:
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 0, 1])
+                    merge(destinationShape=isosurface3, strideSize=7, sourceShape=temp_shape)
 
     gpu_surface1 = es.toGPUShape(isosurface1)
     gpu_surface2 = es.toGPUShape(isosurface2)
     gpu_surface3 = es.toGPUShape(isosurface3)
 
-    
+    gpuPecera = es.toGPUShape(bs.createColorCube(0.7, 0.7, 0.7))
     
     
     gpuAxis = es.toGPUShape(bs.createAxis(4))
@@ -325,19 +347,26 @@ if __name__ == "__main__":
 
         if (glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS):
             camera_theta += 2* dt
+            
+        if (glfw.get_key(window, glfw.KEY_DOWN) == glfw.PRESS):
+            controller.zoom += 0.1
+            
+        if (glfw.get_key(window, glfw.KEY_UP) == glfw.PRESS):
+            if controller.zoom >= 1:
+                controller.zoom -= 0.1
 
 
         projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
 
-        camX = -10 * np.sin(camera_theta)
-        camY = -10 * np.cos(camera_theta)
-        camZ = 3
+        camX = -5 * controller.zoom * np.sin(camera_theta)
+        camY = -5 * controller.zoom* np.cos(camera_theta)
+        camZ = 4
 
         viewPos = np.array([camX,camY,camZ])
 
         view = tr.lookAt(
             viewPos,
-            np.array([0,0,0]),
+            np.array([0,0,1]),
             np.array([0,0,1])
         )
 
@@ -393,6 +422,7 @@ if __name__ == "__main__":
 
         # Drawing
         # Peces
+        glDisable(GL_CULL_FACE)
         drawMovementFish(gpuPez, t0, lightingPipeline)
         
         glUseProgram(pipeline.shaderProgram)
@@ -406,7 +436,9 @@ if __name__ == "__main__":
         
         
         transf = tr.matmul([tr.translate(-2,-3,0),tr.uniformScale(1)])
+        transf2 = tr.matmul([tr.translate(-0.5,0,2),tr.scale(3.3,6.3,4.3)])
         
+        glEnable(GL_CULL_FACE)
         
         if controller.voxel1 == True:
             glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf)
@@ -421,8 +453,13 @@ if __name__ == "__main__":
             glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf)
             
             pipeline.drawShape(gpu_surface3) 
+            
+            
+        # Pecera    
+        glUseProgram(pipeline.shaderProgram)
+        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf2)
+        pipeline.drawShape(gpuPecera)
         
-        glDisable(GL_CULL_FACE) 
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.
         glfw.swap_buffers(window)
 

@@ -356,7 +356,47 @@ class SimpleModelViewProjectionShaderProgram:
             out vec4 outColor;
             void main()
             {
-                outColor = vec4(newColor, 0.5 * 1.0f);
+                outColor = vec4(newColor, 1.0f);
+            }
+            """
+
+        self.shaderProgram = OpenGL.GL.shaders.compileProgram(
+            OpenGL.GL.shaders.compileShader(vertex_shader, OpenGL.GL.GL_VERTEX_SHADER),
+            OpenGL.GL.shaders.compileShader(fragment_shader, OpenGL.GL.GL_FRAGMENT_SHADER))
+        
+class SimpleModelViewProjectionShaderProgram2:
+
+    def __init__(self):
+
+        vertex_shader = """
+            #version 130
+            
+            uniform mat4 projection;
+            uniform mat4 view;
+            uniform mat4 model;
+
+            in vec3 position;
+            in vec3 color;
+
+            out vec3 newColor;
+            void main()
+            {
+                gl_Position = projection * view * model * vec4(position, 1.0f);
+                newColor = color;
+            }
+            """
+
+        fragment_shader = """
+            
+            #version 130
+            in vec3 newColor;
+            
+            
+
+            out vec4 outColor;
+            void main()
+            {
+                outColor = vec4(newColor, 0.3f);
             }
             """
 
@@ -428,7 +468,47 @@ class SimpleTextureModelViewProjectionShaderProgram:
             OpenGL.GL.shaders.compileShader(vertex_shader, OpenGL.GL.GL_VERTEX_SHADER),
             OpenGL.GL.shaders.compileShader(fragment_shader, OpenGL.GL.GL_FRAGMENT_SHADER))
 
+class SimpleModelViewProjectionShaderProgram3:
 
+    def __init__(self):
+
+        vertex_shader = """
+            #version 130
+            
+            uniform mat4 projection;
+            uniform mat4 view;
+            uniform mat4 model;
+
+            in vec3 position;
+            in vec3 color;
+
+            out vec3 newColor;
+            void main()
+            {
+                gl_Position = projection * view * model * vec4(position, 1.0f);
+                newColor = color;
+            }
+            """
+
+        fragment_shader = """
+            
+            #version 130
+            in vec3 newColor;
+            
+            
+
+            out vec4 outColor;
+            void main()
+            {
+                outColor = vec4(newColor, 0.2f);
+            }
+            """
+
+        self.shaderProgram = OpenGL.GL.shaders.compileProgram(
+            OpenGL.GL.shaders.compileShader(vertex_shader, OpenGL.GL.GL_VERTEX_SHADER),
+            OpenGL.GL.shaders.compileShader(fragment_shader, OpenGL.GL.GL_FRAGMENT_SHADER))
+        
+        
     def drawShape(self, shape, mode=GL_TRIANGLES):
         assert isinstance(shape, GPUShape)
 
