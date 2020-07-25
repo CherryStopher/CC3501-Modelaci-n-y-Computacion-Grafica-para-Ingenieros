@@ -126,17 +126,16 @@ def drawMovementFish(gpu,theta, posX, posY, posZ, lightingPipeline, scala=0.5):
     
     #Moviéndose a través del espacio
     pez = sg.findNode(gpu, "pez")
-    xPos = 2*np.cos(theta)
     
-    
-    
-    
+    rot = 10 * (posX+posY+posZ)
+
+
     if theta%(2*np.pi) < 3.0:
         reflex = tr.identity()
     else:
         reflex = tr.scale(-1, 1, 1)
     
-    pez.transform = tr.matmul([ tr.translate(posX-2, posY-3, posZ),reflex, tr.uniformScale(0.2)])
+    pez.transform = tr.matmul([ tr.translate(posX-2, posY-3, posZ),reflex, tr.rotationZ(rot), tr.uniformScale(0.2)])
     
     # Drawing
     sg.drawSceneGraphNode(gpu, lightingPipeline, "model")
@@ -243,11 +242,107 @@ def on_key(window, key, scancode, action, mods):
     elif key == glfw.KEY_C:
         controller.voxel3 = not controller.voxel3
     
+def createBordePecera():
+    gpuNegro = es.toGPUShape(bs.createColorNormalsCube(0, 0, 0))
+
+
+    
+    # Borde Horizontal
+    bordeH = sg.SceneGraphNode("bordeH")
+    bordeH.transform = tr.scale(1, 0.02, 0.02)
+    bordeH.childs += [gpuNegro] 
+    
+    
+    # Borde H1
+    bordeH1 = sg.SceneGraphNode("bordeH1")
+    bordeH1.transform = tr.translate(0, -0.5, 0.5)
+    bordeH1.childs += [bordeH]  
+    
+    # Borde H2
+    bordeH2 = sg.SceneGraphNode("bordeH2")
+    bordeH2.transform = tr.translate(0, 0.5, 0.5)
+    bordeH2.childs += [bordeH]  
+    
+    # Borde H3
+    bordeH3 = sg.SceneGraphNode("bordeH3")
+    bordeH3.transform = tr.translate(0, 0.5, -0.5)
+    bordeH3.childs += [bordeH] 
+    
+    # Borde H4
+    bordeH4 = sg.SceneGraphNode("bordeH4")
+    bordeH4.transform = tr.translate(0, -0.5, -0.5)
+    bordeH4.childs += [bordeH]  
+    
+    
+    
+    # Borde Horizontal_2
+    bordeH_2 = sg.SceneGraphNode("bordeH_2")
+    bordeH_2.transform = tr.rotationZ(np.pi/2)
+    bordeH_2.childs += [bordeH] 
+    
+    # Borde H21
+    bordeH21 = sg.SceneGraphNode("bordeH21")
+    bordeH21.transform = tr.translate(-0.5, 0, 0.5)
+    bordeH21.childs += [bordeH_2]  
+    
+    # Borde H22
+    bordeH22 = sg.SceneGraphNode("bordeH22")
+    bordeH22.transform = tr.translate(0.5, 0, 0.5)
+    bordeH22.childs += [bordeH_2]  
+    
+    # Borde H23
+    bordeH23 = sg.SceneGraphNode("bordeH23")
+    bordeH23.transform = tr.translate(0.5, 0, -0.5)
+    bordeH23.childs += [bordeH_2] 
+    
+    # Borde H24
+    bordeH24 = sg.SceneGraphNode("bordeH24")
+    bordeH24.transform = tr.translate(-0.5, 0, -0.5)
+    bordeH24.childs += [bordeH_2]  
+    
+    
+    
+  
+    # Borde Vertical
+    bordeV = sg.SceneGraphNode("bordeV")
+    bordeV.transform = tr.scale(0.02, 0.02, 1)
+    bordeV.childs += [gpuNegro]  
+    
+    # Borde V1
+    bordeV1 = sg.SceneGraphNode("bordeV1")
+    bordeV1.transform = tr.translate(-0.5, -0.5, 0)
+    bordeV1.childs += [bordeV]
+    
+    # Borde V2
+    bordeV2 = sg.SceneGraphNode("bordeV2")
+    bordeV2.transform = tr.translate(0.5, -0.5, 0)
+    bordeV2.childs += [bordeV]
+    
+    # Borde V3
+    bordeV3 = sg.SceneGraphNode("bordeV3")
+    bordeV3.transform = tr.translate(-0.5, 0.5, 0)
+    bordeV3.childs += [bordeV]
+    
+    # Borde V4
+    bordeV4 = sg.SceneGraphNode("bordeV4")
+    bordeV4.transform = tr.translate(0.5, 0.5, 0)
+    bordeV4.childs += [bordeV]
+    
+    
+    
+    bordes = sg.SceneGraphNode("bordes")
+    bordes.childs += [bordeH1, bordeH2, bordeH3, bordeH4,
+                      bordeH21, bordeH22, bordeH23, bordeH24,
+                      bordeV1, bordeV2, bordeV3, bordeV4]  
+    
+    return bordes
     
     
 def cursor_pos_callback(window, x, y):
     global controller
     controller.mousePos = (x,y)
+
+
 
 
 
@@ -272,7 +367,7 @@ if __name__ == "__main__":
     glfw.set_key_callback(window, on_key)
 
     pipeline = es.SimpleModelViewProjectionShaderProgram2()  
-    pipeline3 = es.SimpleModelViewProjectionShaderProgram2()  
+    pipelineNormal = es.SimpleModelViewProjectionShaderProgram()  
     lightingPipeline = ls.SimplePhongShaderProgram()
     
     glUseProgram(pipeline.shaderProgram)
@@ -310,11 +405,11 @@ if __name__ == "__main__":
                     merge(destinationShape=isosurface1, strideSize=6, sourceShape=temp_shape)
                 
                 if load_voxels[i,j,k] >= t_b -2 and load_voxels[i,j,k] <= t_b +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [129/255, 218/255, 27/255])
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [129/255, 2, 27/255])
                     merge(destinationShape=isosurface2, strideSize=6, sourceShape=temp_shape)
                     
                 if load_voxels[i,j,k] >= t_c -2 and load_voxels[i,j,k] <= t_c +2:
-                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 215/255, 1])
+                    temp_shape = createColorCube(i,j,k, X,Y, Z, [0, 100/255, 1])
                     merge(destinationShape=isosurface3, strideSize=6, sourceShape=temp_shape)
     
 
@@ -326,7 +421,13 @@ if __name__ == "__main__":
     
     
 
-    gpuPecera = es.toGPUShape(bs.createColorCube(0.7, 0.7, 0.7))
+    gpuPecera = es.toGPUShape(bs.createColorCube(0.0, 0.7, 0.7))
+    gpuLineas = es.toGPUShape(bs.createColorCube(0, 0, 0))
+    gpuBordes = createBordePecera()
+    
+    gpuFondo=es.toGPUShape(bs.createTextureCube("fondo.png"), GL_REPEAT, GL_LINEAR)
+    gpuTecho=es.toGPUShape(bs.createTextureQuad("techo.png"), GL_REPEAT, GL_LINEAR)
+    gpuSuelo=es.toGPUShape(bs.createTextureQuad("suelo.png"), GL_REPEAT, GL_LINEAR)
     
     
     gpuAxis = es.toGPUShape(bs.createAxis(4))
@@ -415,7 +516,7 @@ if __name__ == "__main__":
                 controller.zoom -= 0.05
 
 
-        projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
+        projection = tr.perspective(45, float(width)/float(height), 0.1, 200)
 
         camX = -5 * controller.zoom * np.sin(camera_theta)
         camY = -5 * controller.zoom* np.cos(camera_theta)
@@ -450,6 +551,31 @@ if __name__ == "__main__":
         else:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             
+            
+        
+        
+        # Dibujando el fondo
+        escala = 100
+        textureShaderProgram = es.SimpleTextureModelViewProjectionShaderProgram()
+
+        glUseProgram(textureShaderProgram.shaderProgram)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, tr.uniformScale(escala))
+        textureShaderProgram.drawShape(gpuFondo)
+        
+        cieloTransf = tr.matmul([tr.translate(0, 0, escala/2-10), tr.uniformScale(escala)])
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, cieloTransf)
+        textureShaderProgram.drawShape(gpuTecho)
+        
+        lagoTransf = tr.matmul([tr.translate(0, 0, -escala/2+10), tr.uniformScale(escala)])
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "projection"), 1, GL_TRUE, projection)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(textureShaderProgram.shaderProgram, "model"), 1, GL_TRUE, lagoTransf)
+        textureShaderProgram.drawShape(gpuSuelo)
+            
         
         glUseProgram(lightingPipeline.shaderProgram)
         
@@ -481,49 +607,50 @@ if __name__ == "__main__":
 
         # Drawing
         # Peces
+        transf2 = tr.matmul([tr.translate(-0.5,0,2),tr.scale(3.5,6.5,4.5)])
+        sg.drawSceneGraphNode(gpuBordes, lightingPipeline, "model", transf2)
         
-        glDisable(GL_CULL_FACE)
-        
+        glUniformMatrix4fv(glGetUniformLocation(lightingPipeline.shaderProgram, "view"), 1, GL_TRUE, view)
+        glUniformMatrix4fv(glGetUniformLocation(lightingPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         # Peces A
-        if controller.voxel1 == True:
-            for i in range(n_a):
-                gpuPez = pecesA[i]
-                posPez = pezPosA[i]
-                drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)
+        
+        for i in range(n_a):
+            gpuPez = pecesA[i]
+            posPez = pezPosA[i]
+            drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)
                 
         
         # Peces B
-        if controller.voxel2 == True:
-            for i in range(n_b):
-                gpuPez = pecesB[i]
-                posPez = pezPosB[i]
-                drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)
+        
+        for i in range(n_b):
+            gpuPez = pecesB[i]
+            posPez = pezPosB[i]
+            drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)
                 
             
         # Peces C
-        if controller.voxel3 == True:
-            for i in range(n_c):
-                gpuPez = pecesC[i]
-                posPez = pezPosC[i]
-                drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)    
+        
+        for i in range(n_c):
+            gpuPez = pecesC[i]
+            posPez = pezPosC[i]
+            drawMovementFish(gpuPez, t0*(i+1), posPez[0], posPez[1], posPez[2], lightingPipeline)    
+            
+            
+        
                 
-        
-        
+
         
         glUseProgram(pipeline.shaderProgram)
         
         
         # Voxeles
-        
-        
-        
-        
+
         transf = tr.matmul([tr.translate(-2,-3,0),tr.uniformScale(1)])
                
-        transf2 = tr.matmul([tr.translate(-0.5,0,2),tr.scale(3.3,6.3,4.3)])
+        transf2 = tr.matmul([tr.translate(-0.5,0,2),tr.scale(3.5,6.5,4.5)])
         
         
-        glEnable(GL_CULL_FACE)
+        
         
         
         if controller.voxel2 == True:
@@ -548,6 +675,10 @@ if __name__ == "__main__":
         glUseProgram(pipeline.shaderProgram)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf2)
         pipeline.drawShape(gpuPecera)
+        
+        glUseProgram(pipeline.shaderProgram)
+        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, transf2)
+        pipeline.drawShape(gpuLineas, GL_LINES)
         
         # Once the drawing is rendered, buffers are swap so an uncomplete drawing is never seen.
         glfw.swap_buffers(window)
