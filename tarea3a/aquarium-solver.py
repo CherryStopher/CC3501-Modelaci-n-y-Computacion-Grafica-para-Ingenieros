@@ -371,7 +371,7 @@ np.save(filename, ub)
 
 
 # Plot
-
+"""
 X, Y, Z = np.mgrid[0:W:11j, 0:L:21j, 0:H:14j]
 
 from mpl_toolkits import mplot3d 
@@ -391,7 +391,7 @@ ax.set_ylabel("Length")
 ax.set_zlabel("Hight")
 
 plt.show()
-
+"""
         
         
    
